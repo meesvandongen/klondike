@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Klondike</title>
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self';"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="board">
+      <div id="top-row">
+        <div class="pile-slot" id="stock" data-pile="stock"></div>
+        <div class="pile-slot" id="waste" data-pile="waste"></div>
+        <div class="spacer"></div>
+        <div class="pile-slot foundation" id="foundation-0" data-pile="foundation" data-index="0"></div>
+        <div class="pile-slot foundation" id="foundation-1" data-pile="foundation" data-index="1"></div>
+        <div class="pile-slot foundation" id="foundation-2" data-pile="foundation" data-index="2"></div>
+        <div class="pile-slot foundation" id="foundation-3" data-pile="foundation" data-index="3"></div>
+      </div>
+      <div id="tableau-row">
+        <div class="pile-slot tableau" data-pile="tableau" data-index="0"></div>
+        <div class="pile-slot tableau" data-pile="tableau" data-index="1"></div>
+        <div class="pile-slot tableau" data-pile="tableau" data-index="2"></div>
+        <div class="pile-slot tableau" data-pile="tableau" data-index="3"></div>
+        <div class="pile-slot tableau" data-pile="tableau" data-index="4"></div>
+        <div class="pile-slot tableau" data-pile="tableau" data-index="5"></div>
+        <div class="pile-slot tableau" data-pile="tableau" data-index="6"></div>
+      </div>
+    </div>
+
+    <div id="status-bar">
+      <span id="status-score">Score: 0</span>
+      <span id="status-time">Time: 0</span>
+      <span id="status-moves">Moves: 0</span>
+    </div>
+
+    <div id="modal-root" class="hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal" id="modal-window">
+        <div class="modal-title-bar">
+          <span class="modal-title" id="modal-title">Title</span>
+          <button class="modal-close" id="modal-close" aria-label="Close">×</button>
+        </div>
+        <div class="modal-content" id="modal-content"></div>
+        <div class="modal-buttons" id="modal-buttons"></div>
+      </div>
+    </div>
+
+    <div id="drag-layer"></div>
+
+    <script src="game.js"></script>
+    <script src="ui.js"></script>
+  </body>
+</html>

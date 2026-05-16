@@ -51,7 +51,7 @@ jobs:
       - name: Build ${{ matrix.game }}
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
-        run: npx tauri build --config tauri.${{ matrix.game }}.conf.json ${{ matrix.target_args }}
+        run: npx tauri build --config src-tauri/tauri.${{ matrix.game }}.conf.json ${{ matrix.target_args }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

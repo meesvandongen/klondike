@@ -250,29 +250,42 @@
   }
 
   /**
-   * Smart auto-move: send the top card from `src` to the best target.
-   * Priority: foundation, then any valid tableau pile.
+   * Smart auto-move: send the card (or sequence) at `src.cardIndex` to the
+   * best target. Single cards prefer the foundations; multi-card stacks go
+   * to a valid tableau column.
    */
   function autoMove(state, src) {
     const pile = getSource(state, src);
     if (!pile || pile.length === 0) return false;
-    const top = pile[pile.length - 1];
-    if (!top || !top.faceUp) return false;
+    const startIdx = src.cardIndex == null ? pile.length - 1 : src.cardIndex;
+    if (startIdx < 0 || startIdx >= pile.length) return false;
 
-    // Try foundation
-    for (let i = 0; i < 4; i++) {
-      if (canPlaceOnFoundation(top, state.foundations[i])) {
-        return move(state, { pile: src.pile, index: src.index, cardIndex: pile.length - 1 }, { pile: "foundation", index: i });
+    const slice = pile.slice(startIdx);
+    const moving = slice[0];
+    if (!moving.faceUp) return false;
+    if (slice.length > 1 && !isValidSequence(slice)) return false;
+
+    const moveTo = (dst) =>
+      move(state, { pile: src.pile, index: src.index, cardIndex: startIdx }, dst);
+
+    // Foundation only accepts single cards.
+    if (slice.length === 1) {
+      for (let i = 0; i < 4; i++) {
+        if (canPlaceOnFoundation(moving, state.foundations[i])) {
+          return moveTo({ pile: "foundation", index: i });
+        }
       }
     }
-    // Try tableau (non-empty first, then empty)
+
+    // Tableau: prefer non-empty matching columns, then empty columns for Ks.
     for (let pass = 0; pass < 2; pass++) {
       for (let i = 0; i < 7; i++) {
+        if (src.pile === "tableau" && i === src.index) continue;
         const dstPile = state.tableau[i];
         if (pass === 0 && dstPile.length === 0) continue;
         if (pass === 1 && dstPile.length > 0) continue;
-        if (canPlaceOnTableau(top, dstPile)) {
-          return move(state, { pile: src.pile, index: src.index, cardIndex: pile.length - 1 }, { pile: "tableau", index: i });
+        if (canPlaceOnTableau(moving, dstPile)) {
+          return moveTo({ pile: "tableau", index: i });
         }
       }
     }

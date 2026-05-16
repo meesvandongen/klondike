@@ -265,18 +265,6 @@
 
   /* ----- Drag and drop ----- */
 
-  function topOfPile(src) {
-    const p =
-      src.pile === "tableau"
-        ? state.tableau[src.index]
-        : src.pile === "waste"
-        ? state.waste
-        : src.pile === "foundation"
-        ? state.foundations[src.index]
-        : null;
-    return p ? p.length - 1 : -1;
-  }
-
   function onCardPointerDown(e) {
     if (state.finishedAt || dealingInFlight) return;
     if (e.button !== undefined && e.button !== 0) return;
@@ -427,11 +415,9 @@
 
     if (!drag.didMove) {
       const src = drag.src;
-      const wasTop = topOfPile(src) === src.cardIndex;
       cleanupDragDom();
       drag = null;
-      let moved = false;
-      if (wasTop) moved = K.autoMove(state, src);
+      const moved = K.autoMove(state, src);
       render();
       if (moved) maybeWinCheck();
       return;

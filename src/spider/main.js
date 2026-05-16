@@ -207,7 +207,6 @@
       "restart": newGame,
       "undo": () => { if (S.undo(state)) render(new Set()); },
       "hint": showHint,
-      "auto-complete": () => {}, // no-op for Spider
       "stats": openStats,
       "options": openOptions,
       "about": showAbout,

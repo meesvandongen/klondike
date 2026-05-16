@@ -15,6 +15,14 @@
   const GAME_ID = "klondike";
   let state = K.newState({ draw: 1 });
   let drawMode = 1;
+
+  /** Push the JS-side drawMode to the native menu's check items. */
+  function syncDrawModeMenu(mode) {
+    const t = window.__TAURI__;
+    if (!t || !t.core || typeof t.core.invoke !== "function") return;
+    try { t.core.invoke("sync_draw_mode", { mode }); } catch (_) {}
+  }
+
   let timerHandle = null;
   let dealingInFlight = false;
   let dragMgr = null;
@@ -291,7 +299,11 @@
             const sel = document.querySelector('input[name="draw"]:checked');
             const d = sel ? parseInt(sel.value, 10) : 1;
             Modal.close();
-            if (d !== drawMode) { drawMode = d; newGame(); }
+            if (d !== drawMode) {
+              drawMode = d;
+              syncDrawModeMenu(d);
+              newGame();
+            }
           }
         },
         { label: "Cancel", onClick: Modal.close }
@@ -331,6 +343,8 @@
       "undo": () => { if (K.undo(state)) render(new Set()); },
       "hint": showHint,
       "auto-complete": autoCompleteAll,
+      "draw-1": () => { if (drawMode !== 1) { drawMode = 1; newGame(); } },
+      "draw-3": () => { if (drawMode !== 3) { drawMode = 3; newGame(); } },
       "stats": openStats,
       "options": openOptions,
       "about": showAbout,

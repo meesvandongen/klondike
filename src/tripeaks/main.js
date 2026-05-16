@@ -236,7 +236,6 @@
       "restart": newGame,
       "undo": () => { if (T.undo(state)) render(); },
       "hint": showHint,
-      "auto-complete": () => {}, // not applicable
       "stats": openStats,
       "options": openOptions,
       "about": showAbout,

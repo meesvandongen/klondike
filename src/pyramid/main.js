@@ -275,7 +275,6 @@
       "restart": newGame,
       "undo": () => { selected = null; if (P.undo(state)) render(); },
       "hint": showHint,
-      "auto-complete": () => {},
       "stats": openStats,
       "options": openOptions,
       "about": showAbout,

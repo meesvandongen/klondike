@@ -256,6 +256,50 @@
     return false;
   }
 
+  /** Same Vista safety rule as Klondike. */
+  function isSafeToAutoPlay(state, card) {
+    const r = D.rankValue(card.rank);
+    if (r <= 2) return true;
+    const oppSuits = D.SUIT_COLOR[card.suit] === "red" ? ["S", "C"] : ["H", "D"];
+    for (const s of oppSuits) {
+      let top = null;
+      for (const pile of state.foundations) {
+        if (pile.length && pile[0].suit === s) {
+          top = pile[pile.length - 1];
+          break;
+        }
+      }
+      if (!top || D.rankValue(top.rank) < r - 1) return false;
+    }
+    return true;
+  }
+
+  /** Send one safe candidate to its foundation. */
+  function safeAutoStep(state) {
+    const candidates = [];
+    for (let i = 0; i < 8; i++) {
+      const p = state.tableau[i];
+      if (p.length) {
+        candidates.push({ card: p[p.length - 1], src: { pile: "tableau", index: i, cardIndex: p.length - 1 } });
+      }
+    }
+    for (let i = 0; i < 4; i++) {
+      if (state.cells[i]) {
+        candidates.push({ card: state.cells[i], src: { pile: "cell", index: i, cardIndex: 0 } });
+      }
+    }
+    candidates.sort((a, b) => D.rankValue(a.card.rank) - D.rankValue(b.card.rank));
+    for (const c of candidates) {
+      if (!isSafeToAutoPlay(state, c.card)) continue;
+      for (let f = 0; f < 4; f++) {
+        if (canPlaceOnFoundation(c.card, state.foundations[f])) {
+          return move(state, c.src, { pile: "foundation", index: f });
+        }
+      }
+    }
+    return false;
+  }
+
   /** Hint: pick a productive move. */
   function hint(state) {
     // Tops first
@@ -302,7 +346,7 @@
   }
 
   window.FreeCell = {
-    newState, move, autoMove, autoCompleteStep, hint, undo, isWon,
-    canPlaceOnFoundation, canPlaceOnTableau, isValidSequence
+    newState, move, autoMove, autoCompleteStep, safeAutoStep, isSafeToAutoPlay,
+    hint, undo, isWon, canPlaceOnFoundation, canPlaceOnTableau, isValidSequence
   };
 })();

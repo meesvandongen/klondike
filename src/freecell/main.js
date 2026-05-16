@@ -12,9 +12,21 @@
   const DragManager = window.DragManager;
 
   const GAME_ID = "freecell";
+  const OPTION_DEFAULTS = { autoComplete: true };
+
+  let opts = window.Options.load(GAME_ID, OPTION_DEFAULTS);
+  let autoComplete = opts.autoComplete;
   let state = F.newState();
   let timerHandle = null;
+  let autoPlayActive = false;
   let dragMgr = null;
+
+  function persistOptions() {
+    window.Options.save(GAME_ID, { autoComplete });
+  }
+  function syncAutoCompleteMenu(enabled) {
+    MenuBridge.invoke("sync_auto_complete", { enabled });
+  }
 
   /* ---- Render ---- */
 
@@ -152,15 +164,41 @@
     });
   }
 
-  function autoCompleteAll() {
-    if (state.finishedAt) return;
+  function runAutoPlay() {
+    if (autoPlayActive) return;
+    if (!autoComplete) { maybeWinCheck(); return; }
+    autoPlayActive = true;
     const tick = () => {
-      const moved = F.autoCompleteStep(state);
-      render(new Set());
-      if (moved && !F.isWon(state)) setTimeout(tick, 60);
-      else maybeWinCheck();
+      if (!autoComplete || state.finishedAt) {
+        autoPlayActive = false;
+        maybeWinCheck();
+        return;
+      }
+      const moved = F.safeAutoStep(state);
+      if (moved) {
+        render(new Set());
+        setTimeout(tick, 80);
+      } else {
+        autoPlayActive = false;
+        maybeWinCheck();
+      }
     };
     tick();
+  }
+
+  function setAutoComplete(enabled, syncMenu) {
+    autoComplete = enabled;
+    persistOptions();
+    if (syncMenu) syncAutoCompleteMenu(enabled);
+    if (enabled) runAutoPlay();
+  }
+
+  function handleAutoCompleteAction(payload) {
+    if (payload && typeof payload.checked === "boolean") {
+      setAutoComplete(payload.checked, false);
+    } else {
+      setAutoComplete(!autoComplete, true);
+    }
   }
 
   function showHint() {
@@ -219,8 +257,23 @@
   function openOptions() {
     Modal.show({
       title: "Options",
-      html: `<p style="margin:0;">FreeCell has no configurable options at this time.</p>`,
-      buttons: [{ label: "OK", primary: true, onClick: Modal.close }]
+      html: `
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <label><input type="checkbox" id="opt-autocomplete" ${autoComplete ? "checked" : ""}/> Auto-play cards to foundation</label>
+        </div>
+      `,
+      buttons: [
+        {
+          label: "OK", primary: true,
+          onClick: () => {
+            const acEl = document.getElementById("opt-autocomplete");
+            const newAuto = acEl ? acEl.checked : autoComplete;
+            Modal.close();
+            if (newAuto !== autoComplete) setAutoComplete(newAuto, true);
+          }
+        },
+        { label: "Cancel", onClick: Modal.close }
+      ]
     });
   }
 
@@ -253,13 +306,14 @@
       "restart": newGame,
       "undo": () => { if (F.undo(state)) render(new Set()); },
       "hint": showHint,
-      "auto-complete": autoCompleteAll,
+      "auto-complete": handleAutoCompleteAction,
       "stats": openStats,
       "options": openOptions,
       "about": showAbout,
       "how-to-play": howToPlay
     });
     MenuBridge.wire();
+    syncAutoCompleteMenu(autoComplete);
 
     Hotkeys.bind({
       "F2": "new-game",
@@ -275,7 +329,7 @@
       isLocked: () => !!state.finishedAt,
       getPickup, tryDrop, tryAutoMove,
       render,
-      onAfter: maybeWinCheck
+      onAfter: runAutoPlay
     });
     dragMgr.attach();
 

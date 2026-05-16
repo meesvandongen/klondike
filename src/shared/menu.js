@@ -1,6 +1,9 @@
-/* ---------- Shared Tauri menu listener + action dispatcher ---------- */
+/* ---------- Shared Tauri menu listener + action dispatcher ----------
+ * Actions are functions of (payload?). The payload is set when the menu
+ * event carried structured data (e.g. CheckMenuItem state from Rust);
+ * for plain menu items (or hotkey-triggered fires) payload is undefined.
+ */
 (function () {
-  // Registered { id -> () => void }. Games call register(id, fn).
   const actions = {};
   const lastFiredAt = new Map();
 
@@ -11,13 +14,13 @@
     Object.assign(actions, map);
   }
 
-  function fire(id) {
+  function fire(id, payload) {
     const fn = actions[id];
     if (!fn) return;
     const now = Date.now();
     if (now - (lastFiredAt.get(id) || 0) < 200) return;
     lastFiredAt.set(id, now);
-    fn();
+    fn(payload);
   }
 
   async function wire() {
@@ -25,13 +28,26 @@
     if (!t || !t.event || !t.event.listen) return;
     try {
       await t.event.listen("menu", (event) => {
-        const id = typeof event.payload === "string"
-          ? event.payload
-          : event.payload && event.payload.id;
-        if (id) fire(id);
+        const p = event.payload;
+        if (typeof p === "string") {
+          fire(p);
+        } else if (p && typeof p === "object" && typeof p.id === "string") {
+          fire(p.id, p);
+        }
       });
     } catch (_) {}
   }
 
-  window.MenuBridge = { register, registerMany, fire, wire };
+  /** Convenience wrapper around the Tauri invoke API. */
+  function invoke(name, args) {
+    const t = window.__TAURI__;
+    if (!t || !t.core || typeof t.core.invoke !== "function") return Promise.resolve();
+    try {
+      return t.core.invoke(name, args);
+    } catch (_) {
+      return Promise.resolve();
+    }
+  }
+
+  window.MenuBridge = { register, registerMany, fire, wire, invoke };
 })();

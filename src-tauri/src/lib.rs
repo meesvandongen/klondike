@@ -6,11 +6,13 @@ use tauri::{AppHandle, Emitter, Manager, Wry};
 
 /// Holds references to game-specific menu items so we can update their
 /// checked state when the game state changes (e.g., the user changes
-/// the Klondike draw mode via the Options dialog).
+/// the Klondike draw mode via the Options dialog, or the FreeCell
+/// Auto-Complete toggle from the Options dialog).
 #[derive(Default)]
 struct GameMenuState {
     draw_one: Option<CheckMenuItem<Wry>>,
     draw_three: Option<CheckMenuItem<Wry>>,
+    auto_complete: Option<CheckMenuItem<Wry>>,
 }
 
 /// Capability-style spec describing what menu items a given variant supports.
@@ -67,10 +69,19 @@ fn sync_draw_mode(app: AppHandle, mode: u8) {
     }
 }
 
+#[tauri::command]
+fn sync_auto_complete(app: AppHandle, enabled: bool) {
+    if let Some(state) = app.try_state::<GameMenuState>() {
+        if let Some(ac) = &state.auto_complete {
+            let _ = ac.set_checked(enabled);
+        }
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![sync_draw_mode])
+        .invoke_handler(tauri::generate_handler![sync_draw_mode, sync_auto_complete])
         .setup(|app| {
             let handle = app.handle();
             let product_name = handle
@@ -112,16 +123,16 @@ pub fn run() {
                 .separator()
                 .item(&hint);
 
-            let auto_complete = if spec.has_auto_complete {
-                let item = MenuItemBuilder::with_id("auto-complete", "Auto-Complete")
+            let auto_complete_holder = if spec.has_auto_complete {
+                let item = CheckMenuItemBuilder::with_id("auto-complete", "Auto-Complete")
                     .accelerator("CmdOrCtrl+A")
+                    .checked(true)
                     .build(handle)?;
                 edit_b = edit_b.item(&item);
                 Some(item)
             } else {
                 None
             };
-            let _ = auto_complete;
             let edit_menu = edit_b.build()?;
 
             // ---- View menu (draw modes only for Klondike) ----
@@ -167,6 +178,7 @@ pub fn run() {
             app.manage(GameMenuState {
                 draw_one: draw_one_holder,
                 draw_three: draw_three_holder,
+                auto_complete: auto_complete_holder,
             });
 
             app.on_menu_event(move |app, event| {
@@ -193,6 +205,22 @@ pub fn run() {
                             }
                         }
                         let _ = app.emit("menu", "draw-3");
+                    }
+                    "auto-complete" => {
+                        // Tauri auto-toggles a CheckMenuItem on click;
+                        // forward the new state to the renderer.
+                        let checked = app
+                            .try_state::<GameMenuState>()
+                            .and_then(|s| {
+                                s.auto_complete
+                                    .as_ref()
+                                    .and_then(|ac| ac.is_checked().ok())
+                            })
+                            .unwrap_or(true);
+                        let _ = app.emit(
+                            "menu",
+                            serde_json::json!({ "id": "auto-complete", "checked": checked }),
+                        );
                     }
                     other => {
                         let _ = app.emit("menu", other);

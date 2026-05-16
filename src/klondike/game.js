@@ -331,6 +331,63 @@
   }
 
   /**
+   * Vista safety rule: a card can be sent to its foundation automatically if
+   * no tableau pile could legally place it below another card later. Aces and
+   * 2s are always safe; for rank R >= 3 both opposite-colour (R-1) cards must
+   * already be on a foundation.
+   */
+  function isSafeToAutoPlay(state, card) {
+    const r = rankValue(card.rank);
+    if (r <= 2) return true;
+    const oppSuits = SUIT_COLOR[card.suit] === "red" ? ["S", "C"] : ["H", "D"];
+    for (const s of oppSuits) {
+      let top = null;
+      for (const pile of state.foundations) {
+        if (pile.length && pile[0].suit === s) {
+          top = pile[pile.length - 1];
+          break;
+        }
+      }
+      if (!top || rankValue(top.rank) < r - 1) return false;
+    }
+    return true;
+  }
+
+  /**
+   * Send one safe candidate to its foundation. Returns true if a move was
+   * applied. Unlike autoCompleteStep this works even when face-down cards
+   * remain in the tableau — it only sends cards no tableau move could need.
+   */
+  function safeAutoStep(state) {
+    const candidates = [];
+    if (state.waste.length) {
+      candidates.push({
+        card: state.waste[state.waste.length - 1],
+        src: { pile: "waste", index: 0, cardIndex: state.waste.length - 1 }
+      });
+    }
+    for (let i = 0; i < 7; i++) {
+      const p = state.tableau[i];
+      if (p.length && p[p.length - 1].faceUp) {
+        candidates.push({
+          card: p[p.length - 1],
+          src: { pile: "tableau", index: i, cardIndex: p.length - 1 }
+        });
+      }
+    }
+    candidates.sort((a, b) => rankValue(a.card.rank) - rankValue(b.card.rank));
+    for (const c of candidates) {
+      if (!isSafeToAutoPlay(state, c.card)) continue;
+      for (let f = 0; f < 4; f++) {
+        if (canPlaceOnFoundation(c.card, state.foundations[f])) {
+          return move(state, c.src, { pile: "foundation", index: f });
+        }
+      }
+    }
+    return false;
+  }
+
+  /**
    * Suggest a hint: returns { src, dst } or null.
    */
   function hint(state) {
@@ -430,6 +487,8 @@
     move,
     autoMove,
     autoCompleteStep,
+    safeAutoStep,
+    isSafeToAutoPlay,
     hint,
     undo,
     isWon,

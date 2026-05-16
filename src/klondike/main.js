@@ -13,19 +13,28 @@
   const DragManager = window.DragManager;
 
   const GAME_ID = "klondike";
-  let state = K.newState({ draw: 1 });
-  let drawMode = 1;
+  const OPTION_DEFAULTS = { drawMode: 1, autoComplete: true };
 
-  /** Push the JS-side drawMode to the native menu's check items. */
-  function syncDrawModeMenu(mode) {
-    const t = window.__TAURI__;
-    if (!t || !t.core || typeof t.core.invoke !== "function") return;
-    try { t.core.invoke("sync_draw_mode", { mode }); } catch (_) {}
-  }
+  let opts = window.Options.load(GAME_ID, OPTION_DEFAULTS);
+  let drawMode = opts.drawMode;
+  let autoComplete = opts.autoComplete;
+  let state = K.newState({ draw: drawMode });
 
   let timerHandle = null;
   let dealingInFlight = false;
+  let autoPlayActive = false;
   let dragMgr = null;
+
+  function persistOptions() {
+    window.Options.save(GAME_ID, { drawMode, autoComplete });
+  }
+
+  function syncDrawModeMenu(mode) {
+    MenuBridge.invoke("sync_draw_mode", { mode });
+  }
+  function syncAutoCompleteMenu(enabled) {
+    MenuBridge.invoke("sync_auto_complete", { enabled });
+  }
 
   /* ---- Rendering ---- */
 
@@ -198,15 +207,52 @@
     });
   }
 
-  function autoCompleteAll() {
-    if (state.finishedAt) return;
+  /**
+   * Smart auto-play loop. After every successful move (and on toggle-on)
+   * sends "safe" cards to the foundations one at a time, animated via
+   * setTimeout. Stops when no more safe cards are available; calls the
+   * win flow if the board cleared.
+   */
+  function runAutoPlay() {
+    if (autoPlayActive) return; // already running
+    if (!autoComplete) {
+      maybeWinCheck();
+      return;
+    }
+    autoPlayActive = true;
     const tick = () => {
-      const moved = K.autoCompleteStep(state);
-      render(new Set());
-      if (moved && !K.isWon(state)) setTimeout(tick, 60);
-      else maybeWinCheck();
+      if (!autoComplete || state.finishedAt || dealingInFlight) {
+        autoPlayActive = false;
+        maybeWinCheck();
+        return;
+      }
+      const moved = K.safeAutoStep(state);
+      if (moved) {
+        render(new Set());
+        setTimeout(tick, 80);
+      } else {
+        autoPlayActive = false;
+        maybeWinCheck();
+      }
     };
     tick();
+  }
+
+  function setAutoComplete(enabled, syncMenu) {
+    autoComplete = enabled;
+    persistOptions();
+    if (syncMenu) syncAutoCompleteMenu(enabled);
+    if (enabled) runAutoPlay();
+  }
+
+  function handleAutoCompleteAction(payload) {
+    if (payload && typeof payload.checked === "boolean") {
+      // Came from the menu — Rust has already toggled the check item.
+      setAutoComplete(payload.checked, false);
+    } else {
+      // Hotkey or programmatic — toggle current state and sync back.
+      setAutoComplete(!autoComplete, true);
+    }
   }
 
   /* ---- Hint ---- */
@@ -287,9 +333,14 @@
     Modal.show({
       title: "Options",
       html: `
-        <div style="display:flex; flex-direction:column; gap:8px;">
-          <label><input type="radio" name="draw" value="1" ${drawMode === 1 ? "checked" : ""}/> Draw one card</label>
-          <label><input type="radio" name="draw" value="3" ${drawMode === 3 ? "checked" : ""}/> Draw three cards</label>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <label><input type="radio" name="draw" value="1" ${drawMode === 1 ? "checked" : ""}/> Draw one card</label>
+            <label><input type="radio" name="draw" value="3" ${drawMode === 3 ? "checked" : ""}/> Draw three cards</label>
+          </div>
+          <div style="padding-top:10px; border-top:1px solid #c5c5c5;">
+            <label><input type="checkbox" id="opt-autocomplete" ${autoComplete ? "checked" : ""}/> Auto-play cards to foundation</label>
+          </div>
         </div>
       `,
       buttons: [
@@ -298,9 +349,13 @@
           onClick: () => {
             const sel = document.querySelector('input[name="draw"]:checked');
             const d = sel ? parseInt(sel.value, 10) : 1;
+            const acEl = document.getElementById("opt-autocomplete");
+            const newAuto = acEl ? acEl.checked : autoComplete;
             Modal.close();
+            if (newAuto !== autoComplete) setAutoComplete(newAuto, true);
             if (d !== drawMode) {
               drawMode = d;
+              persistOptions();
               syncDrawModeMenu(d);
               newGame();
             }
@@ -342,15 +397,18 @@
       "restart": () => newGame(),
       "undo": () => { if (K.undo(state)) render(new Set()); },
       "hint": showHint,
-      "auto-complete": autoCompleteAll,
-      "draw-1": () => { if (drawMode !== 1) { drawMode = 1; newGame(); } },
-      "draw-3": () => { if (drawMode !== 3) { drawMode = 3; newGame(); } },
+      "auto-complete": handleAutoCompleteAction,
+      "draw-1": () => { if (drawMode !== 1) { drawMode = 1; persistOptions(); newGame(); } },
+      "draw-3": () => { if (drawMode !== 3) { drawMode = 3; persistOptions(); newGame(); } },
       "stats": openStats,
       "options": openOptions,
       "about": showAbout,
       "how-to-play": howToPlay
     });
     MenuBridge.wire();
+    // Sync menu state with persisted options.
+    syncDrawModeMenu(drawMode);
+    syncAutoCompleteMenu(autoComplete);
 
     Hotkeys.bind({
       "F2": "new-game",
@@ -366,7 +424,7 @@
       isLocked: () => dealingInFlight || !!state.finishedAt,
       getPickup, tryDrop, tryAutoMove,
       render,
-      onAfter: maybeWinCheck
+      onAfter: runAutoPlay
     });
     dragMgr.attach();
 

@@ -112,14 +112,24 @@ body {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
   box-shadow: var(--shadow);
-  cursor: grab;
+  cursor: default;
   transition: box-shadow 0.1s ease;
   overflow: hidden;
   will-change: transform;
 }
 
-.card.face-down {
+/* Only face-up cards exposed for play get the grab cursor. */
+.card[data-movable="1"] {
+  cursor: grab;
+}
+
+/* Stock pile (and its face-down top card) is the only clickable hidden card. */
+#stock,
+.card[data-pile="stock"] {
   cursor: pointer;
+}
+
+.card.face-down {
   background:
     linear-gradient(135deg, #1f4d8a 0%, #143a6e 50%, #1f4d8a 100%);
   border: 1px solid #0b1e3d;

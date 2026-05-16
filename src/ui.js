@@ -641,21 +641,31 @@
     });
   }
 
-  /* ----- Tauri menu wiring ----- */
+  /* ----- Menu + hotkey actions ----- */
 
-  function handleMenu(id) {
-    switch (id) {
-      case "new-game": newGame(); break;
-      case "undo": if (K.undo(state)) render(); break;
-      case "hint": showHint(); break;
-      case "auto-complete": autoCompleteAll(); break;
-      case "draw-1": if (drawMode !== 1) { drawMode = 1; newGame(); } break;
-      case "draw-3": if (drawMode !== 3) { drawMode = 3; newGame(); } break;
-      case "stats": openStats(); break;
-      case "options": openOptions(); break;
-      case "about": showAbout(); break;
-      case "how-to-play": howToPlay(); break;
-    }
+  const actions = {
+    "new-game": () => newGame(),
+    "undo": () => { if (K.undo(state)) render(); },
+    "hint": () => showHint(),
+    "auto-complete": () => autoCompleteAll(),
+    "draw-1": () => { if (drawMode !== 1) { drawMode = 1; newGame(); } },
+    "draw-3": () => { if (drawMode !== 3) { drawMode = 3; newGame(); } },
+    "stats": () => openStats(),
+    "options": () => openOptions(),
+    "about": () => showAbout(),
+    "how-to-play": () => howToPlay()
+  };
+
+  // Debounce so a menu accelerator and the JS keydown handler can't both
+  // run the same action when both happen to fire on the same key press.
+  const lastFiredAt = new Map();
+  function fire(id) {
+    const fn = actions[id];
+    if (!fn) return;
+    const now = Date.now();
+    if (now - (lastFiredAt.get(id) || 0) < 200) return;
+    lastFiredAt.set(id, now);
+    fn();
   }
 
   async function wireTauriMenu() {
@@ -664,9 +674,48 @@
     try {
       await t.event.listen("menu", (event) => {
         const id = typeof event.payload === "string" ? event.payload : event.payload && event.payload.id;
-        if (id) handleMenu(id);
+        if (id) fire(id);
       });
     } catch (_) {}
+  }
+
+  function isModalOpen() {
+    return !document.getElementById("modal-root").classList.contains("hidden");
+  }
+
+  function onKeydown(e) {
+    if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) return;
+
+    if (isModalOpen()) {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        closeModal();
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        // Click the primary button (or first button) of the modal.
+        const buttons = document.querySelectorAll("#modal-buttons button");
+        const primary = Array.from(buttons).find((b) => b.autofocus) || buttons[0];
+        if (primary) primary.click();
+      }
+      return;
+    }
+
+    const ctrl = e.ctrlKey || e.metaKey;
+    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+
+    if (k === "F2" && !ctrl && !e.altKey && !e.shiftKey) {
+      e.preventDefault();
+      fire("new-game");
+    } else if (ctrl && k === "z" && !e.shiftKey && !e.altKey) {
+      e.preventDefault();
+      fire("undo");
+    } else if (ctrl && k === "a" && !e.shiftKey && !e.altKey) {
+      e.preventDefault();
+      fire("auto-complete");
+    } else if (!ctrl && !e.altKey && !e.shiftKey && k === "h") {
+      e.preventDefault();
+      fire("hint");
+    }
   }
 
   /* ----- Wiring ----- */
@@ -675,13 +724,7 @@
     document.getElementById("board").addEventListener("pointerdown", onCardPointerDown);
     document.getElementById("modal-close").addEventListener("click", closeModal);
     window.addEventListener("resize", render);
-    window.addEventListener("keydown", (e) => {
-      if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) return;
-      if (e.key === "F2") {
-        e.preventDefault();
-        newGame();
-      }
-    });
+    window.addEventListener("keydown", onKeydown);
     wireTauriMenu();
   }
 

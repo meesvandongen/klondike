@@ -1,5 +1,5 @@
 use tauri::menu::{
-    CheckMenuItemBuilder, MenuBuilder, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder,
+    MenuBuilder, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder,
 };
 use tauri::Emitter;
 
@@ -9,16 +9,18 @@ pub fn run() {
         .setup(|app| {
             let handle = app.handle();
 
-            // -------- Game menu --------
+            // ---- Game menu ----
             let new_game = MenuItemBuilder::with_id("new-game", "New Game")
                 .accelerator("F2")
                 .build(handle)?;
+            let restart = MenuItemBuilder::with_id("restart", "Restart").build(handle)?;
             let stats = MenuItemBuilder::with_id("stats", "Statistics...").build(handle)?;
             let options = MenuItemBuilder::with_id("options", "Options...").build(handle)?;
             let quit = PredefinedMenuItem::quit(handle, Some("Exit"))?;
 
             let game_menu = SubmenuBuilder::new(handle, "&Game")
                 .item(&new_game)
+                .item(&restart)
                 .separator()
                 .item(&stats)
                 .item(&options)
@@ -26,7 +28,7 @@ pub fn run() {
                 .item(&quit)
                 .build()?;
 
-            // -------- Edit menu --------
+            // ---- Edit menu ----
             let undo = MenuItemBuilder::with_id("undo", "Undo")
                 .accelerator("CmdOrCtrl+Z")
                 .build(handle)?;
@@ -44,27 +46,16 @@ pub fn run() {
                 .item(&auto_complete)
                 .build()?;
 
-            // -------- View menu --------
-            let draw_one = CheckMenuItemBuilder::with_id("draw-1", "Draw One")
-                .checked(true)
-                .build(handle)?;
-            let draw_three = CheckMenuItemBuilder::with_id("draw-3", "Draw Three")
-                .checked(false)
-                .build(handle)?;
+            // ---- View menu ----
             let fullscreen = PredefinedMenuItem::fullscreen(handle, Some("Toggle Full Screen"))?;
-
             let view_menu = SubmenuBuilder::new(handle, "&View")
-                .item(&draw_one)
-                .item(&draw_three)
-                .separator()
                 .item(&fullscreen)
                 .build()?;
 
-            // -------- Help menu --------
+            // ---- Help menu ----
             let how_to_play =
                 MenuItemBuilder::with_id("how-to-play", "How to Play").build(handle)?;
-            let about = MenuItemBuilder::with_id("about", "About Klondike").build(handle)?;
-
+            let about = MenuItemBuilder::with_id("about", "About").build(handle)?;
             let help_menu = SubmenuBuilder::new(handle, "&Help")
                 .item(&how_to_play)
                 .separator()
@@ -80,32 +71,12 @@ pub fn run() {
 
             app.set_menu(menu)?;
 
-            // Reference the check items so we can toggle their state when a
-            // selection happens via the menu.
-            let draw_one_handle = draw_one.clone();
-            let draw_three_handle = draw_three.clone();
-
             app.on_menu_event(move |app, event| {
-                let id = event.id().as_ref();
-                match id {
-                    "draw-1" => {
-                        let _ = draw_one_handle.set_checked(true);
-                        let _ = draw_three_handle.set_checked(false);
-                        let _ = app.emit("menu", "draw-1");
-                    }
-                    "draw-3" => {
-                        let _ = draw_one_handle.set_checked(false);
-                        let _ = draw_three_handle.set_checked(true);
-                        let _ = app.emit("menu", "draw-3");
-                    }
-                    other => {
-                        let _ = app.emit("menu", other);
-                    }
-                }
+                let _ = app.emit("menu", event.id().as_ref());
             });
 
             Ok(())
         })
         .run(tauri::generate_context!())
-        .expect("error running Klondike app");
+        .expect("error running Solitaire app");
 }

@@ -1,4 +1,4 @@
-/* ---------- Vista-style Klondike ---------- */
+/* ---------- Shared Vista-style solitaire styles ---------- */
 
 :root {
   --card-w: 96px;
@@ -23,8 +23,7 @@
   user-select: none;
 }
 
-html,
-body {
+html, body {
   margin: 0;
   padding: 0;
   height: 100%;
@@ -41,36 +40,6 @@ body {
     );
 }
 
-#board {
-  position: relative;
-  width: 100%;
-  height: calc(100% - 28px);
-  padding: 24px 30px 0 30px;
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
-}
-
-#top-row {
-  display: grid;
-  grid-template-columns: repeat(7, var(--card-w));
-  gap: var(--pile-gap);
-  justify-content: center;
-}
-
-#tableau-row {
-  display: grid;
-  grid-template-columns: repeat(7, var(--card-w));
-  gap: var(--pile-gap);
-  justify-content: center;
-  flex: 1;
-  position: relative;
-}
-
-.spacer {
-  /* one card-width spacer between waste and foundations */
-}
-
 /* ---------- Pile slots ---------- */
 
 .pile-slot {
@@ -83,7 +52,7 @@ body {
   box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.35);
 }
 
-.pile-slot.tableau {
+.pile-slot.tall {
   height: 100%;
   min-height: var(--card-h);
   border-bottom: none;
@@ -99,6 +68,17 @@ body {
   font-size: 42px;
   color: rgba(255, 255, 255, 0.18);
   font-weight: 300;
+  pointer-events: none;
+}
+
+.pile-slot.cell::after {
+  content: "·";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 36px;
+  color: rgba(255, 255, 255, 0.22);
   pointer-events: none;
 }
 
@@ -118,43 +98,27 @@ body {
   will-change: transform;
 }
 
-/* Only face-up cards exposed for play get the grab cursor. */
-.card[data-movable="1"] {
-  cursor: grab;
-}
-
-/* Stock pile (and its face-down top card) is the only clickable hidden card. */
-#stock,
-.card[data-pile="stock"] {
-  cursor: pointer;
-}
+.card[data-movable="1"] { cursor: grab; }
+#stock, .card[data-pile="stock"] { cursor: pointer; }
 
 .card.face-down {
-  background:
-    linear-gradient(135deg, #1f4d8a 0%, #143a6e 50%, #1f4d8a 100%);
+  background: linear-gradient(135deg, #1f4d8a 0%, #143a6e 50%, #1f4d8a 100%);
   border: 1px solid #0b1e3d;
 }
-
 .card.face-down::before {
-  /* card back diamond pattern */
   content: "";
   position: absolute;
   inset: 6px;
   border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.35);
   background:
-    repeating-linear-gradient(
-      45deg,
+    repeating-linear-gradient(45deg,
       rgba(255, 255, 255, 0.07) 0 6px,
-      rgba(0, 0, 0, 0.08) 6px 12px
-    ),
-    repeating-linear-gradient(
-      -45deg,
+      rgba(0, 0, 0, 0.08) 6px 12px),
+    repeating-linear-gradient(-45deg,
       rgba(255, 255, 255, 0.07) 0 6px,
-      rgba(0, 0, 0, 0.08) 6px 12px
-    );
+      rgba(0, 0, 0, 0.08) 6px 12px);
 }
-
 .card.face-down::after {
   content: "";
   position: absolute;
@@ -163,13 +127,8 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.22);
 }
 
-.card.face-up.red {
-  color: var(--red);
-}
-
-.card.face-up.black {
-  color: var(--black);
-}
+.card.face-up.red { color: var(--red); }
+.card.face-up.black { color: var(--black); }
 
 .card .corner {
   position: absolute;
@@ -180,27 +139,10 @@ body {
   font-weight: 700;
   font-family: "Georgia", "Times New Roman", serif;
 }
-
-.card .corner.tl {
-  top: 4px;
-  left: 5px;
-}
-
-.card .corner.br {
-  bottom: 4px;
-  right: 5px;
-  transform: rotate(180deg);
-}
-
-.card .corner .rank {
-  font-size: 18px;
-  letter-spacing: -1px;
-}
-
-.card .corner .suit {
-  font-size: 14px;
-  margin-top: 1px;
-}
+.card .corner.tl { top: 4px; left: 5px; }
+.card .corner.br { bottom: 4px; right: 5px; transform: rotate(180deg); }
+.card .corner .rank { font-size: 18px; letter-spacing: -1px; }
+.card .corner .suit { font-size: 14px; margin-top: 1px; }
 
 .card .center {
   position: absolute;
@@ -212,36 +154,18 @@ body {
   font-family: "Georgia", serif;
   pointer-events: none;
 }
+.card.face-card .center { inset: 18px 4px; font-size: 0; }
+.card.face-card .center svg { width: 100%; height: 100%; display: block; }
 
-.card.face-card .center {
-  inset: 18px 4px;
-  font-size: 0;
-}
+.card.dragging { box-shadow: var(--shadow-strong); cursor: grabbing; }
 
-.card.face-card .center svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-
-.card.dragging {
-  box-shadow: var(--shadow-strong);
-  cursor: grabbing;
-}
-
-.card.hint-flash {
-  animation: hint-pulse 0.6s ease 2;
-}
-
+.card.hint-flash { animation: hint-pulse 0.6s ease 2; }
 @keyframes hint-pulse {
-  0%,
-  100% {
-    box-shadow: var(--shadow);
-  }
-  50% {
-    box-shadow: 0 0 0 3px #ffd54a, var(--shadow-strong);
-  }
+  0%, 100% { box-shadow: var(--shadow); }
+  50% { box-shadow: 0 0 0 3px #ffd54a, var(--shadow-strong); }
 }
+
+.card.selected { box-shadow: 0 0 0 3px #ffd54a, var(--shadow-strong); }
 
 /* ---------- Drag layer ---------- */
 
@@ -251,10 +175,7 @@ body {
   pointer-events: none;
   z-index: 100;
 }
-
-#drag-layer .card {
-  pointer-events: none;
-}
+#drag-layer .card { pointer-events: none; }
 
 /* ---------- Status bar ---------- */
 
@@ -264,8 +185,7 @@ body {
   left: 0;
   right: 0;
   height: 28px;
-  background:
-    linear-gradient(to bottom, #f3f3f3 0%, #d8d8d8 100%);
+  background: linear-gradient(to bottom, #f3f3f3 0%, #d8d8d8 100%);
   color: #1a1a1a;
   display: flex;
   align-items: center;
@@ -276,23 +196,15 @@ body {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
-/* ---------- Modal (Vista dialog) ---------- */
+/* ---------- Modal ---------- */
 
 #modal-root {
   position: absolute;
   inset: 0;
   z-index: 1000;
 }
-
-#modal-root.hidden {
-  display: none;
-}
-
-.modal-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.35);
-}
+#modal-root.hidden { display: none; }
+.modal-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.35); }
 
 .modal {
   position: absolute;
@@ -309,7 +221,6 @@ body {
   overflow: hidden;
   font-size: 13px;
 }
-
 .modal-title-bar {
   background: linear-gradient(to bottom, #5687c4 0%, #29569a 100%);
   color: #fff;
@@ -320,7 +231,6 @@ body {
   font-weight: 600;
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
 }
-
 .modal-close {
   background: rgba(255, 255, 255, 0.15);
   border: 1px solid rgba(255, 255, 255, 0.5);
@@ -331,33 +241,12 @@ body {
   border-radius: 3px;
   cursor: pointer;
 }
-
-.modal-close:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-.modal-content {
-  padding: 18px 18px 12px 18px;
-  line-height: 1.5;
-}
-
-.modal-content table {
-  border-collapse: collapse;
-  width: 100%;
-}
-
-.modal-content td {
-  padding: 4px 8px;
-}
-
-.modal-content td:first-child {
-  color: #444;
-}
-
-.modal-content td:last-child {
-  text-align: right;
-  font-weight: 600;
-}
+.modal-close:hover { background: rgba(255, 255, 255, 0.3); }
+.modal-content { padding: 18px 18px 12px 18px; line-height: 1.5; }
+.modal-content table { border-collapse: collapse; width: 100%; }
+.modal-content td { padding: 4px 8px; }
+.modal-content td:first-child { color: #444; }
+.modal-content td:last-child { text-align: right; font-weight: 600; }
 
 .modal-buttons {
   padding: 8px 14px 14px 14px;
@@ -367,7 +256,6 @@ body {
   background: #ececec;
   border-top: 1px solid #c5c5c5;
 }
-
 .modal-buttons button {
   min-width: 84px;
   padding: 5px 12px;
@@ -377,16 +265,11 @@ body {
   cursor: pointer;
   font-size: 12px;
 }
-
 .modal-buttons button:hover {
   background: linear-gradient(to bottom, #ffffff 0%, #d2e6fb 100%);
   border-color: #3c7fb1;
 }
-
-.modal-buttons button:focus {
-  outline: 1px dotted #555;
-  outline-offset: -3px;
-}
+.modal-buttons button:focus { outline: 1px dotted #555; outline-offset: -3px; }
 
 /* ---------- Dealing overlay ---------- */
 
@@ -402,11 +285,7 @@ body {
   background: rgba(8, 50, 22, 0.55);
   backdrop-filter: blur(2px);
 }
-
-#dealing-overlay.hidden {
-  display: none;
-}
-
+#dealing-overlay.hidden { display: none; }
 .dealing-card {
   width: var(--card-w);
   height: var(--card-h);
@@ -417,22 +296,13 @@ body {
   animation: dealing-spin 0.9s ease-in-out infinite;
   transform-origin: center;
 }
-
 .dealing-label {
   color: #fff;
   font-size: 14px;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
-  letter-spacing: 0.2px;
 }
-
 @keyframes dealing-spin {
-  0% {
-    transform: rotateY(0deg) translateY(0);
-  }
-  50% {
-    transform: rotateY(180deg) translateY(-10px);
-  }
-  100% {
-    transform: rotateY(360deg) translateY(0);
-  }
+  0% { transform: rotateY(0deg) translateY(0); }
+  50% { transform: rotateY(180deg) translateY(-10px); }
+  100% { transform: rotateY(360deg) translateY(0); }
 }

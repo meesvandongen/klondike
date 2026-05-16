@@ -1,0 +1,28 @@
+/* ---------- Pyramid board layout ---------- */
+
+#board.pyramid-board {
+  position: relative;
+  width: 100%;
+  height: calc(100% - 28px);
+  padding: 18px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.pyramid-board #pyramid-area {
+  position: relative;
+  /* 7 rows, bottom row spans 7 cards. Each card half-step offset per row. */
+  width: calc(7 * var(--card-w) + 6 * 6px);
+  height: calc(7 * 38px + var(--card-h));
+}
+
+.pyramid-board .pyramid-card { position: absolute; }
+
+.pyramid-board #bottom-row {
+  display: flex;
+  gap: var(--pile-gap);
+  align-items: center;
+  margin-top: 6px;
+}

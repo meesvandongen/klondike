@@ -10,22 +10,20 @@ on:
 
 jobs:
   build:
-    name: Build (${{ matrix.platform }})
+    name: Build ${{ matrix.game }} (${{ matrix.platform }})
     runs-on: ${{ matrix.platform }}
     strategy:
       fail-fast: false
       matrix:
+        platform: [macos-latest, windows-latest]
+        game: [klondike, freecell, spider, tripeaks, pyramid]
         include:
           - platform: macos-latest
-            args: "--target universal-apple-darwin"
-            artifact_name: klondike-macos
-            artifact_paths: |
-              src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg
+            target_args: "--target universal-apple-darwin"
+            artifact_glob: "src-tauri/target/universal-apple-darwin/release/bundle/dmg/*.dmg"
           - platform: windows-latest
-            args: ""
-            artifact_name: klondike-windows
-            artifact_paths: |
-              src-tauri/target/release/bundle/nsis/*.exe
+            target_args: ""
+            artifact_glob: "src-tauri/target/release/bundle/nsis/*.exe"
 
     steps:
       - name: Checkout
@@ -40,6 +38,7 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: ./src-tauri
+          shared-key: ${{ matrix.platform }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -49,16 +48,16 @@ jobs:
       - name: Install npm dependencies
         run: npm install
 
-      - name: Build Tauri app
+      - name: Build ${{ matrix.game }}
         env:
-          TAURI_SIGNING_PRIVATE_KEY: ""
-        run: npx tauri build ${{ matrix.args }}
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+        run: npx tauri build --config tauri.${{ matrix.game }}.conf.json ${{ matrix.target_args }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact_name }}
-          path: ${{ matrix.artifact_paths }}
+          name: solitaire-${{ matrix.game }}-${{ matrix.platform }}
+          path: ${{ matrix.artifact_glob }}
           if-no-files-found: error
 
   release:

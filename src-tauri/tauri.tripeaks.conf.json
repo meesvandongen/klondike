@@ -1,0 +1,47 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "TriPeaks",
+  "version": "1.0.0",
+  "identifier": "com.solitairesuite.tripeaks",
+  "build": {
+    "frontendDist": "../src"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "TriPeaks",
+        "url": "tripeaks/index.html",
+        "width": 1100,
+        "height": 720,
+        "minWidth": 880,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": { "csp": null },
+    "withGlobalTauri": true
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "dmg", "deb", "appimage"],
+    "category": "Game",
+    "shortDescription": "TriPeaks Solitaire",
+    "longDescription": "TriPeaks solitaire — chain cards adjacent in rank to clear three peaks.",
+    "icon": [
+      "icons/tripeaks/32x32.png",
+      "icons/tripeaks/128x128.png",
+      "icons/tripeaks/128x128@2x.png",
+      "icons/tripeaks/icon.icns",
+      "icons/tripeaks/icon.ico"
+    ],
+    "windows": {
+      "nsis": {
+        "installerIcon": "icons/tripeaks/icon.ico",
+        "installMode": "perMachine",
+        "displayLanguageSelector": false
+      }
+    },
+    "macOS": { "minimumSystemVersion": "10.13" }
+  }
+}

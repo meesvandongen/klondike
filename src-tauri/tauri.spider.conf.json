@@ -1,0 +1,47 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Spider",
+  "version": "1.0.0",
+  "identifier": "com.solitairesuite.spider",
+  "build": {
+    "frontendDist": "../src"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Spider",
+        "url": "spider/index.html",
+        "width": 1200,
+        "height": 800,
+        "minWidth": 960,
+        "minHeight": 640,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": { "csp": null },
+    "withGlobalTauri": true
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "dmg", "deb", "appimage"],
+    "category": "Game",
+    "shortDescription": "Spider Solitaire",
+    "longDescription": "Spider solitaire (1-suit) — build eight K-to-A sequences to win.",
+    "icon": [
+      "icons/spider/32x32.png",
+      "icons/spider/128x128.png",
+      "icons/spider/128x128@2x.png",
+      "icons/spider/icon.icns",
+      "icons/spider/icon.ico"
+    ],
+    "windows": {
+      "nsis": {
+        "installerIcon": "icons/spider/icon.ico",
+        "installMode": "perMachine",
+        "displayLanguageSelector": false
+      }
+    },
+    "macOS": { "minimumSystemVersion": "10.13" }
+  }
+}

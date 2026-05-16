@@ -1,0 +1,39 @@
+/* ---------- Spider board layout ---------- */
+
+#board.spider-board {
+  position: relative;
+  width: 100%;
+  height: calc(100% - 28px);
+  padding: 18px 24px 0 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.spider-board #tableau-row {
+  display: grid;
+  grid-template-columns: repeat(10, var(--card-w));
+  gap: 14px;
+  justify-content: center;
+  flex: 1;
+  position: relative;
+}
+
+.spider-board #bottom-row {
+  display: grid;
+  grid-template-columns: var(--card-w) 1fr var(--card-w);
+  gap: 14px;
+  align-items: center;
+  justify-content: center;
+}
+
+.spider-board #completed {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 12px;
+  text-align: center;
+  padding: 0 4px;
+}
+.completed-count { font-weight: 600; }

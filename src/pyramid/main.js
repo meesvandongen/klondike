@@ -10,12 +10,16 @@
   const Hotkeys = window.Hotkeys;
 
   const GAME_ID = "pyramid";
-  const ROW_Y = 38;
-  const COL_X_GAP = 6;
+  const OPTION_DEFAULTS = { zoom: 1 };
+  let opts = window.Options.load(GAME_ID, OPTION_DEFAULTS);
 
   let state = P.newState();
   let timerHandle = null;
   let selected = null; // ref currently highlighted (pile + index)
+
+  function persistOptions() {
+    window.Options.save(GAME_ID, { zoom: opts.zoom });
+  }
 
   function refKey(r) { return `${r.pile}#${r.index}`; }
 
@@ -24,7 +28,8 @@
 
   function render() {
     const cardW = U.cssVarPx("--card-w");
-    const stepX = (cardW + COL_X_GAP) / 2;
+    const colGap = U.cssVarPx("--pyramid-col-gap");
+    const rowY = U.cssVarPx("--pyramid-row-y");
 
     const area = document.getElementById("pyramid-area");
     clearChildren(area);
@@ -36,14 +41,11 @@
       const avail = P.isAvailable(state, i);
       const el = Card.createCardElement({ ...card, faceUp: true });
       el.classList.add("pyramid-card");
-      // Center: bottom row spans 7 card-widths + 6 gaps. Each row shifts inward.
-      // x = (7 - row - 1) * stepX/?... Use half-step formula:
-      // bottom row card c at left = c * (cardW + gap)
-      // row r card c at left = ((7 - r - 1) * (cardW + gap) / 2) + c * (cardW + gap)
-      const rowOffset = ((6 - row) * (cardW + COL_X_GAP)) / 2;
-      const left = rowOffset + col * (cardW + COL_X_GAP);
+      // Row r card c left = ((6 - r) * (cardW + gap) / 2) + c * (cardW + gap)
+      const rowOffset = ((6 - row) * (cardW + colGap)) / 2;
+      const left = rowOffset + col * (cardW + colGap);
       el.style.left = `${left}px`;
-      el.style.top = `${row * ROW_Y}px`;
+      el.style.top = `${row * rowY}px`;
       el.dataset.pile = "pyramid";
       el.dataset.index = i;
       if (avail) el.dataset.movable = "1";
@@ -280,12 +282,21 @@
       "about": showAbout,
       "how-to-play": howToPlay
     });
+    window.Zoom.install({
+      initial: opts.zoom,
+      onChange: (z) => { opts.zoom = z; persistOptions(); render(); }
+    });
+
     MenuBridge.wire();
 
     Hotkeys.bind({
       "F2": "new-game",
       "ctrl+z": "undo",
-      "h": "hint"
+      "h": "hint",
+      "ctrl+=": "zoom-in",
+      "ctrl+shift++": "zoom-in",
+      "ctrl+-": "zoom-out",
+      "ctrl+0": "zoom-reset"
     });
 
     document.getElementById("board").addEventListener("pointerdown", onPointerDown);

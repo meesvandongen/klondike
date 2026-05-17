@@ -21,7 +21,15 @@
   function create(opts) {
     const boardEl = opts.boardEl;
     const dragLayerEl = opts.dragLayerEl;
-    const fanY = opts.fanY != null ? opts.fanY : 26;
+
+    function currentFanY() {
+      if (typeof opts.fanY === "function") return opts.fanY();
+      if (typeof opts.fanY === "number") return opts.fanY;
+      return parseInt(
+        getComputedStyle(document.documentElement).getPropertyValue("--tableau-fan-up"),
+        10
+      ) || 26;
+    }
 
     let drag = null;
 
@@ -86,6 +94,7 @@
 
     function positionDrag(x, y) {
       if (!drag) return;
+      const fanY = currentFanY();
       let yOff = 0;
       for (const el of drag.els) {
         el.style.left = `${x - drag.grabDX}px`;

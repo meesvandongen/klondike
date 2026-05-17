@@ -135,9 +135,18 @@ pub fn run() {
             };
             let edit_menu = edit_b.build()?;
 
-            // ---- View menu (draw modes only for Klondike) ----
+            // ---- View menu ----
             let fullscreen =
                 PredefinedMenuItem::fullscreen(handle, Some("Toggle Full Screen"))?;
+            let zoom_in = MenuItemBuilder::with_id("zoom-in", "Zoom In")
+                .accelerator("CmdOrCtrl+Equal")
+                .build(handle)?;
+            let zoom_out = MenuItemBuilder::with_id("zoom-out", "Zoom Out")
+                .accelerator("CmdOrCtrl+Minus")
+                .build(handle)?;
+            let zoom_reset = MenuItemBuilder::with_id("zoom-reset", "Actual Size")
+                .accelerator("CmdOrCtrl+0")
+                .build(handle)?;
 
             let mut view_b = SubmenuBuilder::new(handle, "&View");
             let mut draw_one_holder: Option<CheckMenuItem<Wry>> = None;
@@ -153,7 +162,12 @@ pub fn run() {
                 draw_one_holder = Some(d1);
                 draw_three_holder = Some(d3);
             }
-            view_b = view_b.item(&fullscreen);
+            view_b = view_b
+                .item(&zoom_in)
+                .item(&zoom_out)
+                .item(&zoom_reset)
+                .separator()
+                .item(&fullscreen);
             let view_menu = view_b.build()?;
 
             // ---- Help menu ----

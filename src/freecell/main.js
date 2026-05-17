@@ -12,7 +12,7 @@
   const DragManager = window.DragManager;
 
   const GAME_ID = "freecell";
-  const OPTION_DEFAULTS = { autoComplete: true };
+  const OPTION_DEFAULTS = { autoComplete: true, zoom: 1 };
 
   let opts = window.Options.load(GAME_ID, OPTION_DEFAULTS);
   let autoComplete = opts.autoComplete;
@@ -22,7 +22,7 @@
   let dragMgr = null;
 
   function persistOptions() {
-    window.Options.save(GAME_ID, { autoComplete });
+    window.Options.save(GAME_ID, { autoComplete, zoom: opts.zoom });
   }
   function syncAutoCompleteMenu(enabled) {
     MenuBridge.invoke("sync_auto_complete", { enabled });
@@ -312,6 +312,11 @@
       "about": showAbout,
       "how-to-play": howToPlay
     });
+    window.Zoom.install({
+      initial: opts.zoom,
+      onChange: (z) => { opts.zoom = z; persistOptions(); }
+    });
+
     MenuBridge.wire();
     syncAutoCompleteMenu(autoComplete);
 
@@ -319,7 +324,11 @@
       "F2": "new-game",
       "ctrl+z": "undo",
       "ctrl+a": "auto-complete",
-      "h": "hint"
+      "h": "hint",
+      "ctrl+=": "zoom-in",
+      "ctrl+shift++": "zoom-in",
+      "ctrl+-": "zoom-out",
+      "ctrl+0": "zoom-reset"
     });
 
     dragMgr = DragManager.create({

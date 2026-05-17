@@ -14,8 +14,8 @@
 .pyramid-board #pyramid-area {
   position: relative;
   /* 7 rows, bottom row spans 7 cards. Each card half-step offset per row. */
-  width: calc(7 * var(--card-w) + 6 * 6px);
-  height: calc(7 * 38px + var(--card-h));
+  width: calc(7 * var(--card-w) + 6 * var(--pyramid-col-gap));
+  height: calc(7 * var(--pyramid-row-y) + var(--card-h));
 }
 
 .pyramid-board .pyramid-card { position: absolute; }

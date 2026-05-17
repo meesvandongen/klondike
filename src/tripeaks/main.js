@@ -10,9 +10,15 @@
   const Hotkeys = window.Hotkeys;
 
   const GAME_ID = "tripeaks";
-  const ROW_Y = 34; // vertical distance between rows in px (cards heavily overlap)
+  const ROW_Y = 34; // vertical distance between rows in px at zoom=1
+  const OPTION_DEFAULTS = { zoom: 1 };
+  let opts = window.Options.load(GAME_ID, OPTION_DEFAULTS);
   let state = T.newState();
   let timerHandle = null;
+
+  function persistOptions() {
+    window.Options.save(GAME_ID, { zoom: opts.zoom });
+  }
 
   /* ---- Render ---- */
 
@@ -21,6 +27,8 @@
   function render() {
     const cardW = U.cssVarPx("--card-w");
     const halfW = cardW / 2;
+    const zoom = parseFloat(document.documentElement.dataset.zoom || "1") || 1;
+    const rowY = ROW_Y * zoom;
 
     const peaksArea = document.getElementById("peaks-area");
     clearChildren(peaksArea);
@@ -34,7 +42,7 @@
       const el = Card.createCardElement(showCard);
       el.classList.add("peak-card");
       el.style.left = `${lay.x * halfW}px`;
-      el.style.top = `${lay.row * ROW_Y}px`;
+      el.style.top = `${lay.row * rowY}px`;
       el.dataset.pile = "tableau";
       el.dataset.index = i;
       if (avail) {
@@ -241,12 +249,21 @@
       "about": showAbout,
       "how-to-play": howToPlay
     });
+    window.Zoom.install({
+      initial: opts.zoom,
+      onChange: (z) => { opts.zoom = z; persistOptions(); render(); }
+    });
+
     MenuBridge.wire();
 
     Hotkeys.bind({
       "F2": "new-game",
       "ctrl+z": "undo",
-      "h": "hint"
+      "h": "hint",
+      "ctrl+=": "zoom-in",
+      "ctrl+shift++": "zoom-in",
+      "ctrl+-": "zoom-out",
+      "ctrl+0": "zoom-reset"
     });
 
     document.getElementById("board").addEventListener("pointerdown", onPointerDown);

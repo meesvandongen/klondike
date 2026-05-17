@@ -4,9 +4,14 @@
   --card-w: 96px;
   --card-h: 134px;
   --card-radius: 7px;
-  --tableau-fan-up: 26px;
+  --tableau-fan-up: 32px;
   --tableau-fan-down: 12px;
   --pile-gap: 18px;
+  --corner-rank-size: 16px;
+  --corner-suit-size: 12px;
+  --peaks-row-y: 34px;
+  --pyramid-row-y: 38px;
+  --pyramid-col-gap: 6px;
   --felt-1: #2c8a3a;
   --felt-2: #0a4a1d;
   --shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
@@ -139,10 +144,10 @@ html, body {
   font-weight: 700;
   font-family: "Georgia", "Times New Roman", serif;
 }
-.card .corner.tl { top: 4px; left: 5px; }
-.card .corner.br { bottom: 4px; right: 5px; transform: rotate(180deg); }
-.card .corner .rank { font-size: 18px; letter-spacing: -1px; }
-.card .corner .suit { font-size: 14px; margin-top: 1px; }
+.card .corner.tl { top: 3px; left: 5px; }
+.card .corner.br { bottom: 3px; right: 5px; transform: rotate(180deg); }
+.card .corner .rank { font-size: var(--corner-rank-size); letter-spacing: -0.5px; }
+.card .corner .suit { font-size: var(--corner-suit-size); margin-top: 0; }
 
 .card .center {
   position: absolute;

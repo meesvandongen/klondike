@@ -13,7 +13,7 @@
   const DragManager = window.DragManager;
 
   const GAME_ID = "klondike";
-  const OPTION_DEFAULTS = { drawMode: 1, autoComplete: true };
+  const OPTION_DEFAULTS = { drawMode: 1, autoComplete: true, zoom: 1 };
 
   let opts = window.Options.load(GAME_ID, OPTION_DEFAULTS);
   let drawMode = opts.drawMode;
@@ -26,7 +26,7 @@
   let dragMgr = null;
 
   function persistOptions() {
-    window.Options.save(GAME_ID, { drawMode, autoComplete });
+    window.Options.save(GAME_ID, { drawMode, autoComplete, zoom: opts.zoom });
   }
 
   function syncDrawModeMenu(mode) {
@@ -405,6 +405,11 @@
       "about": showAbout,
       "how-to-play": howToPlay
     });
+    window.Zoom.install({
+      initial: opts.zoom,
+      onChange: (z) => { opts.zoom = z; persistOptions(); }
+    });
+
     MenuBridge.wire();
     // Sync menu state with persisted options.
     syncDrawModeMenu(drawMode);
@@ -414,7 +419,11 @@
       "F2": "new-game",
       "ctrl+z": "undo",
       "ctrl+a": "auto-complete",
-      "h": "hint"
+      "h": "hint",
+      "ctrl+=": "zoom-in",
+      "ctrl+shift++": "zoom-in",
+      "ctrl+-": "zoom-out",
+      "ctrl+0": "zoom-reset"
     });
 
     dragMgr = DragManager.create({

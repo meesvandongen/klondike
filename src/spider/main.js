@@ -12,9 +12,15 @@
   const DragManager = window.DragManager;
 
   const GAME_ID = "spider";
+  const OPTION_DEFAULTS = { zoom: 1 };
+  let opts = window.Options.load(GAME_ID, OPTION_DEFAULTS);
   let state = S.newState();
   let timerHandle = null;
   let dragMgr = null;
+
+  function persistOptions() {
+    window.Options.save(GAME_ID, { zoom: opts.zoom });
+  }
 
   /* ---- Render ---- */
   function tableauEl(idx) {
@@ -212,12 +218,21 @@
       "about": showAbout,
       "how-to-play": howToPlay
     });
+    window.Zoom.install({
+      initial: opts.zoom,
+      onChange: (z) => { opts.zoom = z; persistOptions(); }
+    });
+
     MenuBridge.wire();
 
     Hotkeys.bind({
       "F2": "new-game",
       "ctrl+z": "undo",
-      "h": "hint"
+      "h": "hint",
+      "ctrl+=": "zoom-in",
+      "ctrl+shift++": "zoom-in",
+      "ctrl+-": "zoom-out",
+      "ctrl+0": "zoom-reset"
     });
 
     dragMgr = DragManager.create({

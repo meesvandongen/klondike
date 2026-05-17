@@ -15,7 +15,7 @@
   position: relative;
   /* 10 cards across at half-card units => 19 half-units wide => 19*(card-w/2) + card-w */
   width: calc(19 * (var(--card-w) / 2) + var(--card-w));
-  height: calc(3 * 34px + var(--card-h));
+  height: calc(3 * var(--peaks-row-y) + var(--card-h));
 }
 
 .tripeaks-board .peak-card {

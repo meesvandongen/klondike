@@ -1,0 +1,30 @@
+/* ---------- TriPeaks board layout ---------- */
+
+#board.tripeaks-board {
+  position: relative;
+  width: 100%;
+  height: calc(100% - 28px);
+  padding: 18px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.tripeaks-board #peaks-area {
+  position: relative;
+  /* 10 cards across at half-card units => 19 half-units wide => 19*(card-w/2) + card-w */
+  width: calc(19 * (var(--card-w) / 2) + var(--card-w));
+  height: calc(3 * var(--peaks-row-y) + var(--card-h));
+}
+
+.tripeaks-board .peak-card {
+  position: absolute;
+}
+
+.tripeaks-board #bottom-row {
+  display: flex;
+  gap: var(--pile-gap);
+  align-items: center;
+  margin-top: 6px;
+}

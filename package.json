@@ -1,0 +1,24 @@
+{
+  "name": "solitaire-suite",
+  "version": "1.0.0",
+  "description": "Klondike, FreeCell, Spider, TriPeaks and Pyramid built with Tauri",
+  "author": "Solitaire",
+  "license": "MIT",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "dev:klondike": "tauri dev",
+    "dev:freecell": "tauri dev --config src-tauri/tauri.freecell.conf.json",
+    "dev:spider": "tauri dev --config src-tauri/tauri.spider.conf.json",
+    "dev:tripeaks": "tauri dev --config src-tauri/tauri.tripeaks.conf.json",
+    "dev:pyramid": "tauri dev --config src-tauri/tauri.pyramid.conf.json",
+    "build:klondike": "tauri build",
+    "build:freecell": "tauri build --config src-tauri/tauri.freecell.conf.json",
+    "build:spider": "tauri build --config src-tauri/tauri.spider.conf.json",
+    "build:tripeaks": "tauri build --config src-tauri/tauri.tripeaks.conf.json",
+    "build:pyramid": "tauri build --config src-tauri/tauri.pyramid.conf.json"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.0.0"
+  }
+}

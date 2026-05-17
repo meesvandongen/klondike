@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>TriPeaks</title>
+    <link rel="stylesheet" href="../shared/styles.css" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body data-game="tripeaks">
+    <div id="board" class="tripeaks-board">
+      <div id="peaks-area"></div>
+      <div id="bottom-row">
+        <div class="pile-slot" id="stock" data-pile="stock"></div>
+        <div class="pile-slot" id="waste" data-pile="waste"></div>
+      </div>
+    </div>
+
+    <div id="status-bar">
+      <span id="status-score">Score: 0</span>
+      <span id="status-time">Time: 0</span>
+      <span id="status-moves">Moves: 0</span>
+    </div>
+
+    <div id="modal-root" class="hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal">
+        <div class="modal-title-bar">
+          <span class="modal-title" id="modal-title">Title</span>
+          <button class="modal-close" id="modal-close" aria-label="Close">×</button>
+        </div>
+        <div class="modal-content" id="modal-content"></div>
+        <div class="modal-buttons" id="modal-buttons"></div>
+      </div>
+    </div>
+
+    <div id="dealing-overlay" class="hidden">
+      <div class="dealing-card"></div>
+      <div class="dealing-label">Dealing…</div>
+    </div>
+
+    <div id="drag-layer"></div>
+
+    <script src="../shared/utils.js"></script>
+    <script src="../shared/deck.js"></script>
+    <script src="../shared/card.js"></script>
+    <script src="../shared/modal.js"></script>
+    <script src="../shared/stats.js"></script>
+    <script src="../shared/options.js"></script>
+    <script src="../shared/overlay.js"></script>
+    <script src="../shared/status.js"></script>
+    <script src="../shared/menu.js"></script>
+    <script src="../shared/hotkeys.js"></script>
+    <script src="../shared/zoom.js"></script>
+
+    <script src="game.js"></script>
+    <script src="main.js"></script>
+  </body>
+</html>

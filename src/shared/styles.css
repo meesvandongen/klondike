@@ -1,0 +1,347 @@
+/* ---------- Shared Vista-style solitaire styles ---------- */
+
+:root {
+  --card-w: 96px;
+  --card-h: 134px;
+  --card-radius: 7px;
+  --card-top-h: 38px;
+  --tableau-fan-up: 40px;
+  --tableau-fan-down: 13px;
+  --pile-gap: 18px;
+  --corner-rank-size: 18px;
+  --corner-suit-size: 18px;
+  --peaks-row-y: 34px;
+  --pyramid-row-y: 38px;
+  --pyramid-col-gap: 6px;
+  --felt-1: #2c8a3a;
+  --felt-2: #0a4a1d;
+  --shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+  --shadow-strong: 0 6px 14px rgba(0, 0, 0, 0.45);
+  --card-bg: #fefefe;
+  --card-border: #1d1d1d;
+  --red: #c11414;
+  --black: #1a1a1a;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  width: 100%;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  color: #fff;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      ellipse at 50% 35%,
+      var(--felt-1) 0%,
+      #196a2a 45%,
+      var(--felt-2) 100%
+    );
+}
+
+/* ---------- Pile slots ---------- */
+
+.pile-slot {
+  position: relative;
+  width: var(--card-w);
+  height: var(--card-h);
+  border-radius: var(--card-radius);
+  border: 1.5px dashed rgba(255, 255, 255, 0.32);
+  background: rgba(0, 0, 0, 0.16);
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.35);
+}
+
+.pile-slot.tall {
+  height: 100%;
+  min-height: var(--card-h);
+  border-bottom: none;
+  border-radius: var(--card-radius) var(--card-radius) 0 0;
+}
+
+.pile-slot.foundation::after {
+  content: "A";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 42px;
+  color: rgba(255, 255, 255, 0.18);
+  font-weight: 300;
+  pointer-events: none;
+}
+
+.pile-slot.cell::after {
+  content: "·";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 36px;
+  color: rgba(255, 255, 255, 0.22);
+  pointer-events: none;
+}
+
+/* ---------- Cards ---------- */
+
+.card {
+  position: absolute;
+  width: var(--card-w);
+  height: var(--card-h);
+  border-radius: var(--card-radius);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--shadow);
+  cursor: default;
+  transition: box-shadow 0.1s ease;
+  overflow: hidden;
+  will-change: transform;
+  display: flex;
+  flex-direction: column;
+}
+
+.card[data-movable="1"] { cursor: grab; }
+#stock, .card[data-pile="stock"] { cursor: pointer; }
+
+.card.face-down {
+  background: linear-gradient(135deg, #1f4d8a 0%, #143a6e 50%, #1f4d8a 100%);
+  border: 1px solid #0b1e3d;
+}
+.card.face-down::before {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background:
+    repeating-linear-gradient(45deg,
+      rgba(255, 255, 255, 0.07) 0 6px,
+      rgba(0, 0, 0, 0.08) 6px 12px),
+    repeating-linear-gradient(-45deg,
+      rgba(255, 255, 255, 0.07) 0 6px,
+      rgba(0, 0, 0, 0.08) 6px 12px);
+}
+.card.face-down::after {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.card.face-up.red { color: var(--red); }
+.card.face-up.black { color: var(--black); }
+
+/* Top-left index: rank on top, suit pip below, left-aligned.
+ * The whole card-top is exactly --card-top-h tall, which is the
+ * amount of card revealed when stacked under another card. */
+.card-top {
+  flex-shrink: 0;
+  height: var(--card-top-h);
+  padding: 3px 5px 0 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-family: "Georgia", "Times New Roman", serif;
+  font-weight: 700;
+  line-height: 1;
+}
+.card-top .rank,
+.card-bottom .rank {
+  font-size: var(--corner-rank-size);
+  letter-spacing: -0.5px;
+}
+.card-top .suit,
+.card-bottom .suit {
+  font-size: var(--corner-suit-size);
+  margin-top: 1px;
+}
+
+/* Bottom-right rotated mirror — traditional playing card style.
+ * About 65% the size of the top index. Rarely visible in a tableau
+ * stack but shown for any card whose bottom edge is exposed. */
+.card-bottom {
+  position: absolute;
+  bottom: 3px;
+  right: 6px;
+  transform: rotate(180deg);
+  transform-origin: center;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1;
+  font-family: "Georgia", "Times New Roman", serif;
+  font-weight: 700;
+  pointer-events: none;
+}
+.card-bottom .rank { font-size: calc(var(--corner-rank-size) * 0.66); }
+.card-bottom .suit { font-size: calc(var(--corner-suit-size) * 0.66); margin-top: 0; }
+
+/* Body: pip pattern, ace, or face-card art — fills full body. */
+.card-body {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  pointer-events: none;
+}
+.card-body svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.card.dragging { box-shadow: var(--shadow-strong); cursor: grabbing; }
+
+.card.hint-flash { animation: hint-pulse 0.6s ease 2; }
+@keyframes hint-pulse {
+  0%, 100% { box-shadow: var(--shadow); }
+  50% { box-shadow: 0 0 0 3px #ffd54a, var(--shadow-strong); }
+}
+
+.card.selected { box-shadow: 0 0 0 3px #ffd54a, var(--shadow-strong); }
+
+/* ---------- Drag layer ---------- */
+
+#drag-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+}
+#drag-layer .card { pointer-events: none; }
+
+/* ---------- Status bar ---------- */
+
+#status-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  background: linear-gradient(to bottom, #f3f3f3 0%, #d8d8d8 100%);
+  color: #1a1a1a;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 0 16px;
+  font-size: 12px;
+  border-top: 1px solid #888;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+/* ---------- Modal ---------- */
+
+#modal-root {
+  position: absolute;
+  inset: 0;
+  z-index: 1000;
+}
+#modal-root.hidden { display: none; }
+.modal-backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.35); }
+
+.modal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 320px;
+  max-width: 460px;
+  background: #f4f4f4;
+  color: #111;
+  border: 1px solid #5a5a5a;
+  border-radius: 6px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  font-size: 13px;
+}
+.modal-title-bar {
+  background: linear-gradient(to bottom, #5687c4 0%, #29569a 100%);
+  color: #fff;
+  padding: 5px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
+}
+.modal-close {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  color: #fff;
+  width: 22px;
+  height: 18px;
+  line-height: 1;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.modal-close:hover { background: rgba(255, 255, 255, 0.3); }
+.modal-content { padding: 18px 18px 12px 18px; line-height: 1.5; }
+.modal-content table { border-collapse: collapse; width: 100%; }
+.modal-content td { padding: 4px 8px; }
+.modal-content td:first-child { color: #444; }
+.modal-content td:last-child { text-align: right; font-weight: 600; }
+
+.modal-buttons {
+  padding: 8px 14px 14px 14px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  background: #ececec;
+  border-top: 1px solid #c5c5c5;
+}
+.modal-buttons button {
+  min-width: 84px;
+  padding: 5px 12px;
+  background: linear-gradient(to bottom, #fafafa 0%, #dcdcdc 100%);
+  border: 1px solid #888;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.modal-buttons button:hover {
+  background: linear-gradient(to bottom, #ffffff 0%, #d2e6fb 100%);
+  border-color: #3c7fb1;
+}
+.modal-buttons button:focus { outline: 1px dotted #555; outline-offset: -3px; }
+
+/* ---------- Dealing overlay ---------- */
+
+#dealing-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 900;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  background: rgba(8, 50, 22, 0.55);
+  backdrop-filter: blur(2px);
+}
+#dealing-overlay.hidden { display: none; }
+.dealing-card {
+  width: var(--card-w);
+  height: var(--card-h);
+  border-radius: var(--card-radius);
+  background: linear-gradient(135deg, #1f4d8a 0%, #143a6e 50%, #1f4d8a 100%);
+  border: 1px solid #0b1e3d;
+  box-shadow: var(--shadow-strong);
+  animation: dealing-spin 0.9s ease-in-out infinite;
+  transform-origin: center;
+}
+.dealing-label {
+  color: #fff;
+  font-size: 14px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55);
+}
+@keyframes dealing-spin {
+  0% { transform: rotateY(0deg) translateY(0); }
+  50% { transform: rotateY(180deg) translateY(-10px); }
+  100% { transform: rotateY(360deg) translateY(0); }
+}

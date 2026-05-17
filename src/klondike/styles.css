@@ -1,0 +1,27 @@
+/* ---------- Klondike board layout ---------- */
+
+#board.klondike-board {
+  position: relative;
+  width: 100%;
+  height: calc(100% - 28px);
+  padding: 24px 30px 0 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.klondike-board #top-row {
+  display: grid;
+  grid-template-columns: repeat(7, var(--card-w));
+  gap: var(--pile-gap);
+  justify-content: center;
+}
+
+.klondike-board #tableau-row {
+  display: grid;
+  grid-template-columns: repeat(7, var(--card-w));
+  gap: var(--pile-gap);
+  justify-content: center;
+  flex: 1;
+  position: relative;
+}

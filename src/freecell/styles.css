@@ -1,0 +1,27 @@
+/* ---------- FreeCell board layout ---------- */
+
+#board.freecell-board {
+  position: relative;
+  width: 100%;
+  height: calc(100% - 28px);
+  padding: 24px 30px 0 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.freecell-board #top-row {
+  display: grid;
+  grid-template-columns: repeat(8, var(--card-w));
+  gap: var(--pile-gap);
+  justify-content: center;
+}
+
+.freecell-board #tableau-row {
+  display: grid;
+  grid-template-columns: repeat(8, var(--card-w));
+  gap: var(--pile-gap);
+  justify-content: center;
+  flex: 1;
+  position: relative;
+}

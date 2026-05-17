@@ -12,7 +12,7 @@
         "title": "Klondike",
         "url": "klondike/index.html",
         "width": 1024,
-        "height": 740,
+        "height": 850,
         "minWidth": 800,
         "minHeight": 600,
         "resizable": true,

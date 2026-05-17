@@ -4,12 +4,12 @@
   --card-w: 96px;
   --card-h: 134px;
   --card-radius: 7px;
-  --card-top-h: 28px;
-  --tableau-fan-up: 30px;
-  --tableau-fan-down: 12px;
+  --card-top-h: 38px;
+  --tableau-fan-up: 40px;
+  --tableau-fan-down: 13px;
   --pile-gap: 18px;
   --corner-rank-size: 18px;
-  --corner-suit-size: 16px;
+  --corner-suit-size: 18px;
   --peaks-row-y: 34px;
   --pyramid-row-y: 38px;
   --pyramid-col-gap: 6px;
@@ -138,27 +138,52 @@ html, body {
 .card.face-up.red { color: var(--red); }
 .card.face-up.black { color: var(--black); }
 
-/* Top strip: rank + suit horizontally, always visible when stacked. */
+/* Top-left index: rank on top, suit pip below, left-aligned.
+ * The whole card-top is exactly --card-top-h tall, which is the
+ * amount of card revealed when stacked under another card. */
 .card-top {
   flex-shrink: 0;
   height: var(--card-top-h);
-  padding: 0 6px;
+  padding: 3px 5px 0 6px;
   display: flex;
-  align-items: center;
-  gap: 4px;
+  flex-direction: column;
+  align-items: flex-start;
   font-family: "Georgia", "Times New Roman", serif;
   font-weight: 700;
   line-height: 1;
 }
-.card-top .rank {
+.card-top .rank,
+.card-bottom .rank {
   font-size: var(--corner-rank-size);
   letter-spacing: -0.5px;
 }
-.card-top .suit {
+.card-top .suit,
+.card-bottom .suit {
   font-size: var(--corner-suit-size);
+  margin-top: 1px;
 }
 
-/* Body: pip pattern, ace, or face-card art. */
+/* Bottom-right rotated mirror — traditional playing card style.
+ * About 65% the size of the top index. Rarely visible in a tableau
+ * stack but shown for any card whose bottom edge is exposed. */
+.card-bottom {
+  position: absolute;
+  bottom: 3px;
+  right: 6px;
+  transform: rotate(180deg);
+  transform-origin: center;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1;
+  font-family: "Georgia", "Times New Roman", serif;
+  font-weight: 700;
+  pointer-events: none;
+}
+.card-bottom .rank { font-size: calc(var(--corner-rank-size) * 0.66); }
+.card-bottom .suit { font-size: calc(var(--corner-suit-size) * 0.66); margin-top: 0; }
+
+/* Body: pip pattern, ace, or face-card art — fills full body. */
 .card-body {
   flex: 1;
   position: relative;

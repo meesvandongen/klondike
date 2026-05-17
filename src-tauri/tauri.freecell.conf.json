@@ -12,7 +12,7 @@
         "title": "FreeCell",
         "url": "freecell/index.html",
         "width": 1100,
-        "height": 740,
+        "height": 850,
         "minWidth": 880,
         "minHeight": 600,
         "resizable": true,

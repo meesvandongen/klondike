@@ -407,7 +407,7 @@
     });
     window.Zoom.install({
       initial: opts.zoom,
-      onChange: (z) => { opts.zoom = z; persistOptions(); }
+      onChange: (z) => { opts.zoom = z; persistOptions(); render(new Set()); }
     });
 
     MenuBridge.wire();

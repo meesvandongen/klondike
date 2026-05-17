@@ -1,11 +1,12 @@
 /* ---------- Shared card DOM rendering ----------
  * Vista-style card. Top-left "index" stacks rank above the suit pip
- * vertically; bottom-right shows a smaller rotated mirror. The body
- * fills the rest with the rank's pip pattern (or a big suit for the
- * Ace, or the K/Q/J ornament).
+ * vertically; bottom-right shows a rotated mirror with the same font
+ * sizes. The body fills the entire card (CSS grid, body spans every
+ * row) with the rank's pip pattern (or a big suit for the Ace, or the
+ * K/Q/J ornament). Corner indices overlay the body at higher z-index.
  *
  * Card stacking exposes the top --card-top-h pixels of each card,
- * which is exactly the index area.
+ * which is exactly the corner index area.
  */
 (function () {
   const D = window.Deck;
@@ -15,45 +16,55 @@
   }
 
   /* ----- Pip layouts -----
-   * Coordinates are in a 100 x 100 viewBox that covers the body.
+   * The body SVG uses viewBox "0 0 100 140" so its aspect ratio matches
+   * the card itself (96:134 ≈ 100:140). The body fills the whole card
+   * height, with the top corner index occupying roughly y∈[0, 42] and
+   * the bottom corner mirror occupying y∈[98, 140]. Pips therefore
+   * sit in y∈[44, 96] so they don't clash with the corner indices.
    * `r: true` rotates that pip 180° (bottom half mirrored).
    */
   const PIP_LAYOUTS = {
-    "2":  [[50, 18], [50, 82, true]],
-    "3":  [[50, 14], [50, 50], [50, 86, true]],
-    "4":  [[30, 18], [70, 18], [30, 82, true], [70, 82, true]],
-    "5":  [[30, 18], [70, 18], [50, 50], [30, 82, true], [70, 82, true]],
-    "6":  [[30, 16], [70, 16], [30, 50], [70, 50], [30, 84, true], [70, 84, true]],
-    "7":  [[30, 14], [70, 14], [50, 27], [30, 50], [70, 50], [30, 86, true], [70, 86, true]],
-    "8":  [[30, 14], [70, 14], [50, 27], [30, 50], [70, 50], [50, 73, true], [30, 86, true], [70, 86, true]],
-    "9":  [[30, 13], [70, 13], [30, 35], [70, 35], [50, 50], [30, 65, true], [70, 65, true], [30, 87, true], [70, 87, true]],
-    "10": [[30, 12], [70, 12], [50, 22], [30, 34], [70, 34], [30, 66, true], [70, 66, true], [50, 78, true], [30, 88, true], [70, 88, true]]
+    "2":  [[50, 55], [50, 85, true]],
+    "3":  [[50, 55], [50, 70], [50, 85, true]],
+    "4":  [[33, 55], [67, 55], [33, 85, true], [67, 85, true]],
+    "5":  [[33, 55], [67, 55], [50, 70], [33, 85, true], [67, 85, true]],
+    "6":  [[33, 55], [67, 55], [33, 70], [67, 70], [33, 85, true], [67, 85, true]],
+    "7":  [[33, 53], [67, 53], [50, 61], [33, 70], [67, 70], [33, 87, true], [67, 87, true]],
+    "8":  [[33, 52], [67, 52], [50, 60], [33, 70], [67, 70], [50, 80, true], [33, 88, true], [67, 88, true]],
+    "9":  [[33, 50], [67, 50], [33, 61], [67, 61], [50, 70], [33, 79, true], [67, 79, true], [33, 90, true], [67, 90, true]],
+    "10": [[33, 49], [67, 49], [50, 55], [33, 63], [67, 63], [33, 77, true], [67, 77, true], [50, 85, true], [33, 91, true], [67, 91, true]]
   };
 
+  // Pip glyph font-size in viewBox units. The body region is roughly
+  // 56 viewBox units tall (between the two 42-unit corner regions),
+  // so the multi-row layouts need smaller glyphs to avoid overlap.
   const PIP_SIZE = {
-    "2": 42, "3": 36, "4": 34, "5": 30, "6": 30, "7": 28, "8": 26, "9": 26, "10": 24
+    "2": 26, "3": 22, "4": 22, "5": 18, "6": 18, "7": 16, "8": 16, "9": 15, "10": 13
   };
+
+  // Center of the body region in the viewBox — roughly card center.
+  const BODY_MID_Y = 70;
 
   function pipsSvg(rank, suit) {
     const color = D.SUIT_COLOR[suit] === "red" ? "#c11414" : "#1a1a1a";
     const glyph = escapeSvg(D.SUIT_GLYPH[suit]);
-    const size = PIP_SIZE[rank] || 24;
+    const size = PIP_SIZE[rank] || 18;
     const pips = PIP_LAYOUTS[rank].map(([x, y, rot]) => {
       const t = rot ? ` transform="rotate(180 ${x} ${y})"` : "";
       return `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central"
               font-size="${size}" fill="${color}"${t}>${glyph}</text>`;
     }).join("");
-    return `<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"
+    return `<svg viewBox="0 0 100 140" preserveAspectRatio="none"
                  xmlns="http://www.w3.org/2000/svg">${pips}</svg>`;
   }
 
   function aceSvg(suit) {
     const color = D.SUIT_COLOR[suit] === "red" ? "#c11414" : "#1a1a1a";
     const glyph = escapeSvg(D.SUIT_GLYPH[suit]);
-    return `<svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"
+    return `<svg viewBox="0 0 100 140" preserveAspectRatio="none"
                  xmlns="http://www.w3.org/2000/svg">
-      <text x="50" y="50" text-anchor="middle" dominant-baseline="central"
-            font-size="72" fill="${color}">${glyph}</text>
+      <text x="50" y="${BODY_MID_Y}" text-anchor="middle" dominant-baseline="central"
+            font-size="50" fill="${color}">${glyph}</text>
     </svg>`;
   }
 
@@ -64,7 +75,7 @@
     let ornament = "";
     if (rank === "K") {
       ornament = `
-        <g transform="translate(50 38)">
+        <g transform="translate(50 ${BODY_MID_Y - 4})">
           <rect x="-24" y="6" width="48" height="6" fill="${color}"/>
           <path d="M -24 7 L -19 -10 L -10 5 L -3 -12 L 0 -18 L 3 -12 L 10 5 L 19 -10 L 24 7 Z"
                 fill="${color}" stroke="${accent}" stroke-width="1" stroke-linejoin="round"/>
@@ -76,7 +87,7 @@
         </g>`;
     } else if (rank === "Q") {
       ornament = `
-        <g transform="translate(50 40)">
+        <g transform="translate(50 ${BODY_MID_Y - 2})">
           <rect x="-20" y="6" width="40" height="5" fill="${color}"/>
           <path d="M -20 7 L -15 -7 L -8 5 L 0 -12 L 8 5 L 15 -7 L 20 7 Z"
                 fill="${color}" stroke="${accent}" stroke-width="1" stroke-linejoin="round"/>
@@ -93,7 +104,7 @@
     } else {
       // Jack — feathered plume
       ornament = `
-        <g transform="translate(50 46)">
+        <g transform="translate(50 ${BODY_MID_Y + 2})">
           <path d="M 0 -28 Q -10 -18 -8 -6 Q -13 1 -8 10 Q -3 18 0 18 Q 3 18 8 10 Q 13 1 8 -6 Q 10 -18 0 -28 Z"
                 fill="${color}" stroke="${accent}" stroke-width="1" stroke-linejoin="round"/>
           <path d="M 0 -28 L 0 16" stroke="${accent}" stroke-width="0.9" fill="none"/>
@@ -105,9 +116,9 @@
     }
 
     return `
-      <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet"
+      <svg viewBox="0 0 100 140" preserveAspectRatio="none"
            xmlns="http://www.w3.org/2000/svg">
-        <rect x="6" y="6" width="88" height="88" fill="none" rx="4"
+        <rect x="6" y="44" width="88" height="52" fill="none" rx="4"
               stroke="${color}" stroke-width="0.6" stroke-opacity="0.4"/>
         ${ornament}
       </svg>`;

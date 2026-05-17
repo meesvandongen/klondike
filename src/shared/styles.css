@@ -4,7 +4,7 @@
   --card-w: 96px;
   --card-h: 134px;
   --card-radius: 7px;
-  --card-top-h: 38px;
+  --card-top-h: 40px;
   --tableau-fan-up: 40px;
   --tableau-fan-down: 13px;
   --pile-gap: 18px;
@@ -88,7 +88,21 @@ html, body {
   pointer-events: none;
 }
 
-/* ---------- Cards ---------- */
+/* ---------- Cards ----------
+ *
+ * Layout uses CSS grid:
+ *   .card defines named row tracks for the top index area, the body,
+ *   and the bottom index area. The body spans every track so the pip /
+ *   ornament art fills the entire card. The two corner indices sit on
+ *   top of the body in the first and last tracks. Each corner uses
+ *   `grid-template-rows: subgrid` so the rank and suit pip line up
+ *   against the same parent tracks no matter the zoom or card size.
+ *
+ *   --card-top-h is the height of the corner index region, which is
+ *   exactly the slice of card revealed when another card is fanned on
+ *   top of it. Top and bottom indices share the same font sizes so
+ *   the rotated mirror reads identically to the top.
+ */
 
 .card {
   position: absolute;
@@ -102,8 +116,14 @@ html, body {
   transition: box-shadow 0.1s ease;
   overflow: hidden;
   will-change: transform;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows:
+    [corner-top-start] var(--corner-rank-size)
+    [corner-top-mid] var(--corner-suit-size)
+    [corner-top-end body-start] 1fr [body-end corner-bot-start]
+    var(--corner-rank-size)
+    [corner-bot-mid] var(--corner-suit-size) [corner-bot-end];
 }
 
 .card[data-movable="1"] { cursor: grab; }
@@ -138,20 +158,66 @@ html, body {
 .card.face-up.red { color: var(--red); }
 .card.face-up.black { color: var(--black); }
 
-/* Top-left index: rank on top, suit pip below, left-aligned.
- * The whole card-top is exactly --card-top-h tall, which is the
- * amount of card revealed when stacked under another card. */
+/* Body spans the whole card so the pip art / ornament fills edge to
+ * edge. Corner indices overlay the body with a higher z-index. */
+.card-body {
+  grid-column: 1;
+  grid-row: 1 / -1;
+  position: relative;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.card-body svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Top-left index: rank above suit pip. Subgrid inherits the parent's
+ * row tracks so rank and suit always line up with the named rows. */
 .card-top {
-  flex-shrink: 0;
-  height: var(--card-top-h);
+  grid-column: 1;
+  grid-row: corner-top-start / corner-top-end;
+  display: grid;
+  grid-template-rows: subgrid;
+  justify-items: start;
   padding: 3px 5px 0 6px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
   font-family: "Georgia", "Times New Roman", serif;
   font-weight: 700;
   line-height: 1;
+  pointer-events: none;
+  z-index: 1;
 }
+.card-top .rank { grid-row: corner-top-start / corner-top-mid; }
+.card-top .suit { grid-row: corner-top-mid / corner-top-end; }
+
+/* Bottom-right rotated mirror. Same sizes as the top index so it reads
+ * identically when a card's bottom edge is exposed (e.g. foundation
+ * top card, free cell). Rotation is applied to the whole block so
+ * the subgrid placement stays in document order. */
+.card-bottom {
+  grid-column: 1;
+  grid-row: corner-bot-start / corner-bot-end;
+  display: grid;
+  grid-template-rows: subgrid;
+  justify-items: start;
+  padding: 3px 5px 0 6px;
+  font-family: "Georgia", "Times New Roman", serif;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 1;
+  transform: rotate(180deg);
+  transform-origin: center;
+}
+/* In the unrotated bottom corner the rank sits in the upper row
+ * track and the suit pip in the lower one. The 180° rotation then
+ * lands the rank against the bottom-right card edge and the suit
+ * just above it — the traditional mirrored corner. */
+.card-bottom .rank { grid-row: corner-bot-start / corner-bot-mid; }
+.card-bottom .suit { grid-row: corner-bot-mid / corner-bot-end; }
+
 .card-top .rank,
 .card-bottom .rank {
   font-size: var(--corner-rank-size);
@@ -160,40 +226,6 @@ html, body {
 .card-top .suit,
 .card-bottom .suit {
   font-size: var(--corner-suit-size);
-  margin-top: 1px;
-}
-
-/* Bottom-right rotated mirror — traditional playing card style.
- * About 65% the size of the top index. Rarely visible in a tableau
- * stack but shown for any card whose bottom edge is exposed. */
-.card-bottom {
-  position: absolute;
-  bottom: 3px;
-  right: 6px;
-  transform: rotate(180deg);
-  transform-origin: center;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  line-height: 1;
-  font-family: "Georgia", "Times New Roman", serif;
-  font-weight: 700;
-  pointer-events: none;
-}
-.card-bottom .rank { font-size: calc(var(--corner-rank-size) * 0.66); }
-.card-bottom .suit { font-size: calc(var(--corner-suit-size) * 0.66); margin-top: 0; }
-
-/* Body: pip pattern, ace, or face-card art — fills full body. */
-.card-body {
-  flex: 1;
-  position: relative;
-  overflow: hidden;
-  pointer-events: none;
-}
-.card-body svg {
-  width: 100%;
-  height: 100%;
-  display: block;
 }
 
 .card.dragging { box-shadow: var(--shadow-strong); cursor: grabbing; }

@@ -8,12 +8,15 @@
   const MAX = 2.0;
   const STEP = 0.1;
 
-  // Base sizes (must match :root defaults in shared/styles.css)
+  // Base sizes (must match :root defaults in shared/styles.css).
+  // Everything is in CSS pixels; the apply() function multiplies each
+  // base by the current zoom level so cards keep the same proportions
+  // and the visible fan-up slice stays at the same fraction of card-h.
   const BASE = {
     "--card-w": 96,
     "--card-h": 134,
     "--card-radius": 7,
-    "--card-top-h": 38,
+    "--card-top-h": 40,
     "--tableau-fan-up": 40,
     "--tableau-fan-down": 13,
     "--pile-gap": 18,

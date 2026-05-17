@@ -1,4 +1,10 @@
-/* ---------- FreeCell board layout ---------- */
+/* ---------- FreeCell board layout ----------
+ *
+ * Vista FreeCell puts the four free cells on the left and the four
+ * foundations on the right, separated by a clear gap so the two
+ * groups read as distinct. We model that with a 9-column grid where
+ * the middle column is an invisible spacer.
+ */
 
 #board.freecell-board {
   position: relative;
@@ -12,10 +18,15 @@
 
 .freecell-board #top-row {
   display: grid;
-  grid-template-columns: repeat(8, var(--card-w));
+  grid-template-columns:
+    repeat(4, var(--card-w))
+    calc(var(--card-w) / 2)
+    repeat(4, var(--card-w));
   gap: var(--pile-gap);
   justify-content: center;
 }
+
+.freecell-board #top-row .spacer { visibility: hidden; }
 
 .freecell-board #tableau-row {
   display: grid;

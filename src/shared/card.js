@@ -1,12 +1,11 @@
 /* ---------- Shared card DOM rendering ----------
- * Vista-style card. Top-left "index" stacks rank above the suit pip
- * vertically; bottom-right shows a rotated mirror with the same font
- * sizes. The body fills the entire card (CSS grid, body spans every
- * row) with the rank's pip pattern (or a big suit for the Ace, or the
- * K/Q/J ornament). Corner indices overlay the body at higher z-index.
+ * Vista-style card with a 3-column CSS grid: left column for the
+ * top-left index, right column for the bottom-right (rotated) index,
+ * and a centre column whose body spans the entire card so the pip
+ * pattern / Ace / face-card ornament can stretch from edge to edge.
  *
  * Card stacking exposes the top --card-top-h pixels of each card,
- * which is exactly the corner index area.
+ * which lines up with the corner index height.
  */
 (function () {
   const D = window.Deck;
@@ -16,33 +15,38 @@
   }
 
   /* ----- Pip layouts -----
-   * The body SVG uses viewBox "0 0 100 140" so its aspect ratio matches
-   * the card itself (96:134 ≈ 100:140). The body fills the whole card
-   * height, with the top corner index occupying roughly y∈[0, 42] and
-   * the bottom corner mirror occupying y∈[98, 140]. Pips therefore
-   * sit in y∈[44, 96] so they don't clash with the corner indices.
-   * `r: true` rotates that pip 180° (bottom half mirrored).
+   * The body SVG uses viewBox "0 0 100 140" (matching the 96:134 card
+   * aspect). Because the body is in the centre column of a 3-column
+   * grid, the corner indices only block the top-left (x<20, y<42 in
+   * viewBox units) and bottom-right (x>80, y>98) rectangles. The
+   * whole rest of the body is free for pip art, so pips stretch from
+   * y≈22 near the top to y≈118 near the bottom — far bigger than the
+   * old squeezed middle-strip layout.
+   *
+   * `r: true` rotates that pip 180° (bottom half is the mirrored
+   * upside-down version).
    */
   const PIP_LAYOUTS = {
-    "2":  [[50, 55], [50, 85, true]],
-    "3":  [[50, 55], [50, 70], [50, 85, true]],
-    "4":  [[33, 55], [67, 55], [33, 85, true], [67, 85, true]],
-    "5":  [[33, 55], [67, 55], [50, 70], [33, 85, true], [67, 85, true]],
-    "6":  [[33, 55], [67, 55], [33, 70], [67, 70], [33, 85, true], [67, 85, true]],
-    "7":  [[33, 53], [67, 53], [50, 61], [33, 70], [67, 70], [33, 87, true], [67, 87, true]],
-    "8":  [[33, 52], [67, 52], [50, 60], [33, 70], [67, 70], [50, 80, true], [33, 88, true], [67, 88, true]],
-    "9":  [[33, 50], [67, 50], [33, 61], [67, 61], [50, 70], [33, 79, true], [67, 79, true], [33, 90, true], [67, 90, true]],
-    "10": [[33, 49], [67, 49], [50, 55], [33, 63], [67, 63], [33, 77, true], [67, 77, true], [50, 85, true], [33, 91, true], [67, 91, true]]
+    "2":  [[50, 30], [50, 110, true]],
+    "3":  [[50, 25], [50, 70], [50, 115, true]],
+    "4":  [[35, 30], [65, 30], [35, 110, true], [65, 110, true]],
+    "5":  [[35, 30], [65, 30], [50, 70], [35, 110, true], [65, 110, true]],
+    "6":  [[35, 28], [65, 28], [35, 70], [65, 70], [35, 112, true], [65, 112, true]],
+    "7":  [[35, 25], [65, 25], [50, 46], [35, 70], [65, 70], [35, 115, true], [65, 115, true]],
+    "8":  [[35, 25], [65, 25], [50, 46], [35, 70], [65, 70], [50, 94, true], [35, 115, true], [65, 115, true]],
+    "9":  [[35, 24], [65, 24], [35, 50], [65, 50], [50, 70], [35, 90, true], [65, 90, true], [35, 116, true], [65, 116, true]],
+    "10": [[35, 22], [65, 22], [50, 40], [35, 58], [65, 58], [35, 82, true], [65, 82, true], [50, 100, true], [35, 118, true], [65, 118, true]]
   };
 
-  // Pip glyph font-size in viewBox units. The body region is roughly
-  // 56 viewBox units tall (between the two 42-unit corner regions),
-  // so the multi-row layouts need smaller glyphs to avoid overlap.
+  // Pip glyph font-size in viewBox units. Generous — the body region
+  // spans the whole card now so pips can be big icons. Multi-row
+  // layouts step the size down so adjacent rows don't overlap.
   const PIP_SIZE = {
-    "2": 26, "3": 22, "4": 22, "5": 18, "6": 18, "7": 16, "8": 16, "9": 15, "10": 13
+    "2": 44, "3": 36, "4": 36, "5": 30, "6": 28, "7": 24, "8": 22, "9": 22, "10": 18
   };
 
-  // Center of the body region in the viewBox — roughly card center.
+  // Centre of the card in the viewBox — used by the Ace and face-card
+  // ornaments.
   const BODY_MID_Y = 70;
 
   function pipsSvg(rank, suit) {
@@ -64,7 +68,7 @@
     return `<svg viewBox="0 0 100 140" preserveAspectRatio="none"
                  xmlns="http://www.w3.org/2000/svg">
       <text x="50" y="${BODY_MID_Y}" text-anchor="middle" dominant-baseline="central"
-            font-size="50" fill="${color}">${glyph}</text>
+            font-size="80" fill="${color}">${glyph}</text>
     </svg>`;
   }
 

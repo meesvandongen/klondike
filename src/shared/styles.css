@@ -5,11 +5,12 @@
   --card-h: 134px;
   --card-radius: 7px;
   --card-top-h: 40px;
+  --corner-w: 20px;
   --tableau-fan-up: 40px;
   --tableau-fan-down: 13px;
   --pile-gap: 18px;
   --corner-rank-size: 18px;
-  --corner-suit-size: 18px;
+  --corner-suit-size: 14px;
   --peaks-row-y: 34px;
   --pyramid-row-y: 38px;
   --pyramid-col-gap: 6px;
@@ -90,18 +91,27 @@ html, body {
 
 /* ---------- Cards ----------
  *
- * Layout uses CSS grid:
- *   .card defines named row tracks for the top index area, the body,
- *   and the bottom index area. The body spans every track so the pip /
- *   ornament art fills the entire card. The two corner indices sit on
- *   top of the body in the first and last tracks. Each corner uses
- *   `grid-template-rows: subgrid` so the rank and suit pip line up
- *   against the same parent tracks no matter the zoom or card size.
+ * Layout is a 3-column grid:
  *
- *   --card-top-h is the height of the corner index region, which is
- *   exactly the slice of card revealed when another card is fanned on
- *   top of it. Top and bottom indices share the same font sizes so
- *   the rotated mirror reads identically to the top.
+ *   ┌──────┬──────────────┬──────┐
+ *   │ TL   │              │      │
+ *   │      │   pip art    │      │
+ *   │      │   spans the  │      │
+ *   │      │  whole card  │      │
+ *   │      │              │      │
+ *   │      │              │  BR  │
+ *   └──────┴──────────────┴──────┘
+ *
+ * The body lives in the centre column and spans the full card height,
+ * so the pip / ornament art can stretch right to the top and bottom
+ * edges. The top-left index sits in the left column anchored to the
+ * card's top edge; the bottom-right index sits in the right column
+ * anchored to the bottom edge and rotated 180°.
+ *
+ * Column widths are explicit (`--corner-w`) so layout doesn't depend
+ * on font/glyph metrics — the corner indices are sized like icons
+ * inside the column, and oversized ranks like "10" can overflow into
+ * the body area without disturbing the grid.
  */
 
 .card {
@@ -117,13 +127,11 @@ html, body {
   overflow: hidden;
   will-change: transform;
   display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows:
-    [corner-top-start] var(--corner-rank-size)
-    [corner-top-mid] var(--corner-suit-size)
-    [corner-top-end body-start] 1fr [body-end corner-bot-start]
-    var(--corner-rank-size)
-    [corner-bot-mid] var(--corner-suit-size) [corner-bot-end];
+  grid-template-columns:
+    [card-l] var(--corner-w) [body-l]
+    1fr
+    [body-r] var(--corner-w) [card-r];
+  grid-template-rows: 1fr;
 }
 
 .card[data-movable="1"] { cursor: grab; }
@@ -158,11 +166,12 @@ html, body {
 .card.face-up.red { color: var(--red); }
 .card.face-up.black { color: var(--black); }
 
-/* Body spans the whole card so the pip art / ornament fills edge to
- * edge. Corner indices overlay the body with a higher z-index. */
+/* Body spans all three columns and the full single row so the pip
+ * art / ornament fills the entire card. Corner indices overlay it
+ * at a higher z-index. */
 .card-body {
-  grid-column: 1;
-  grid-row: 1 / -1;
+  grid-column: card-l / card-r;
+  grid-row: 1;
   position: relative;
   overflow: hidden;
   pointer-events: none;
@@ -174,49 +183,43 @@ html, body {
   display: block;
 }
 
-/* Top-left index: rank above suit pip. Subgrid inherits the parent's
- * row tracks so rank and suit always line up with the named rows. */
-.card-top {
-  grid-column: 1;
-  grid-row: corner-top-start / corner-top-end;
-  display: grid;
-  grid-template-rows: subgrid;
-  justify-items: start;
-  padding: 3px 5px 0 6px;
+/* Top-left corner: anchored to the top of the card in the left
+ * column. align-self: start pins it to the top of the card; the
+ * height is exactly --card-top-h so a card stacked underneath
+ * reveals exactly the corner index. */
+.card-top,
+.card-bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  height: var(--card-top-h);
+  padding: 3px 0 0 3px;
   font-family: "Georgia", "Times New Roman", serif;
   font-weight: 700;
   line-height: 1;
   pointer-events: none;
   z-index: 1;
 }
-.card-top .rank { grid-row: corner-top-start / corner-top-mid; }
-.card-top .suit { grid-row: corner-top-mid / corner-top-end; }
 
-/* Bottom-right rotated mirror. Same sizes as the top index so it reads
- * identically when a card's bottom edge is exposed (e.g. foundation
- * top card, free cell). Rotation is applied to the whole block so
- * the subgrid placement stays in document order. */
+.card-top {
+  grid-column: card-l / body-l;
+  grid-row: 1;
+  align-self: start;
+}
+
+/* Bottom-right corner: anchored to the bottom of the card in the
+ * right column, then rotated 180° so the index reads as the
+ * traditional mirrored corner. Inside the unrotated element the rank
+ * is on top and the suit below; after the 180° rotation the rank
+ * lands at the card's bottom-right edge with the suit just above it. */
 .card-bottom {
-  grid-column: 1;
-  grid-row: corner-bot-start / corner-bot-end;
-  display: grid;
-  grid-template-rows: subgrid;
-  justify-items: start;
-  padding: 3px 5px 0 6px;
-  font-family: "Georgia", "Times New Roman", serif;
-  font-weight: 700;
-  line-height: 1;
-  pointer-events: none;
-  z-index: 1;
+  grid-column: body-r / card-r;
+  grid-row: 1;
+  align-self: end;
   transform: rotate(180deg);
   transform-origin: center;
 }
-/* In the unrotated bottom corner the rank sits in the upper row
- * track and the suit pip in the lower one. The 180° rotation then
- * lands the rank against the bottom-right card edge and the suit
- * just above it — the traditional mirrored corner. */
-.card-bottom .rank { grid-row: corner-bot-start / corner-bot-mid; }
-.card-bottom .suit { grid-row: corner-bot-mid / corner-bot-end; }
 
 .card-top .rank,
 .card-bottom .rank {
@@ -226,6 +229,7 @@ html, body {
 .card-top .suit,
 .card-bottom .suit {
   font-size: var(--corner-suit-size);
+  margin-top: 1px;
 }
 
 .card.dragging { box-shadow: var(--shadow-strong); cursor: grabbing; }

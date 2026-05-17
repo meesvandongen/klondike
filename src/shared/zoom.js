@@ -17,11 +17,12 @@
     "--card-h": 134,
     "--card-radius": 7,
     "--card-top-h": 40,
+    "--corner-w": 20,
     "--tableau-fan-up": 40,
     "--tableau-fan-down": 13,
     "--pile-gap": 18,
     "--corner-rank-size": 18,
-    "--corner-suit-size": 18,
+    "--corner-suit-size": 14,
     "--peaks-row-y": 34,
     "--pyramid-row-y": 38,
     "--pyramid-col-gap": 6

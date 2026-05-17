@@ -4,11 +4,12 @@
   --card-w: 96px;
   --card-h: 134px;
   --card-radius: 7px;
-  --tableau-fan-up: 32px;
+  --card-top-h: 28px;
+  --tableau-fan-up: 30px;
   --tableau-fan-down: 12px;
   --pile-gap: 18px;
-  --corner-rank-size: 16px;
-  --corner-suit-size: 12px;
+  --corner-rank-size: 18px;
+  --corner-suit-size: 16px;
   --peaks-row-y: 34px;
   --pyramid-row-y: 38px;
   --pyramid-col-gap: 6px;
@@ -101,6 +102,8 @@ html, body {
   transition: box-shadow 0.1s ease;
   overflow: hidden;
   will-change: transform;
+  display: flex;
+  flex-direction: column;
 }
 
 .card[data-movable="1"] { cursor: grab; }
@@ -135,32 +138,38 @@ html, body {
 .card.face-up.red { color: var(--red); }
 .card.face-up.black { color: var(--black); }
 
-.card .corner {
-  position: absolute;
+/* Top strip: rank + suit horizontally, always visible when stacked. */
+.card-top {
+  flex-shrink: 0;
+  height: var(--card-top-h);
+  padding: 0 6px;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  line-height: 1;
-  font-weight: 700;
+  gap: 4px;
   font-family: "Georgia", "Times New Roman", serif;
+  font-weight: 700;
+  line-height: 1;
 }
-.card .corner.tl { top: 3px; left: 5px; }
-.card .corner.br { bottom: 3px; right: 5px; transform: rotate(180deg); }
-.card .corner .rank { font-size: var(--corner-rank-size); letter-spacing: -0.5px; }
-.card .corner .suit { font-size: var(--corner-suit-size); margin-top: 0; }
+.card-top .rank {
+  font-size: var(--corner-rank-size);
+  letter-spacing: -0.5px;
+}
+.card-top .suit {
+  font-size: var(--corner-suit-size);
+}
 
-.card .center {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 54px;
-  font-family: "Georgia", serif;
+/* Body: pip pattern, ace, or face-card art. */
+.card-body {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
   pointer-events: none;
 }
-.card.face-card .center { inset: 18px 4px; font-size: 0; }
-.card.face-card .center svg { width: 100%; height: 100%; display: block; }
+.card-body svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
 
 .card.dragging { box-shadow: var(--shadow-strong); cursor: grabbing; }
 

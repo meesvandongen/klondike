@@ -22,7 +22,7 @@
     "--tableau-fan-down": 13,
     "--pile-gap": 18,
     "--corner-rank-size": 18,
-    "--corner-suit-size": 14,
+    "--corner-suit-size": 18,
     "--peaks-row-y": 34,
     "--pyramid-row-y": 38,
     "--pyramid-col-gap": 6

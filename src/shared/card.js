@@ -4,27 +4,74 @@
  * and a centre column whose body spans the entire card so the pip
  * pattern / Ace / face-card ornament can stretch from edge to edge.
  *
+ * Suit shapes are drawn as SVG paths (not text glyphs) so size and
+ * placement are exact at any zoom — Unicode font glyphs render with
+ * font-dependent metrics that make the actual icon noticeably
+ * smaller than the font-size and inconsistent across platforms.
+ *
  * Card stacking exposes the top --card-top-h pixels of each card,
  * which lines up with the corner index height.
  */
 (function () {
   const D = window.Deck;
 
-  function escapeSvg(s) {
-    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  /* ----- Suit shapes -----
+   *
+   * Each suit is defined in a 0..100 unit box with the visual centre
+   * at (50, 50). Heart/Diamond/Spade are single closed paths; Club
+   * is composed of three circles plus a triangular stem (all filled
+   * with the suit colour by the parent <g>).
+   *
+   * The bounding box of each shape sits roughly at x∈[8, 92] and
+   * y∈[8, 92], so a unit pip drawn with no scaling occupies almost
+   * the full 100×100 box. Scaling is applied by the caller.
+   */
+  const SUIT_SHAPE = {
+    H:
+      '<path d="M50 92 C2 62 2 12 26 12 C38 12 50 22 50 36 ' +
+      'C50 22 62 12 74 12 C98 12 98 62 50 92 Z"/>',
+    D:
+      '<path d="M50 4 L94 50 L50 96 L6 50 Z"/>',
+    S:
+      '<path d="M50 6 C96 30 96 62 50 72 C4 62 4 30 50 6 Z ' +
+      'M32 94 L50 72 L68 94 Z"/>',
+    C:
+      '<circle cx="50" cy="22" r="19"/>' +
+      '<circle cx="26" cy="56" r="19"/>' +
+      '<circle cx="74" cy="56" r="19"/>' +
+      '<path d="M44 68 C44 78 40 88 30 94 L70 94 C60 88 56 78 56 68 Z"/>',
+  };
+
+  function suitColor(suit) {
+    return D.SUIT_COLOR[suit] === "red" ? "#c11414" : "#1a1a1a";
+  }
+
+  /**
+   * Render a single suit pip at (cx, cy) in viewBox units, scaled
+   * uniformly so its bounding box is `size` units wide and tall.
+   * `rotated` flips it 180° around its own centre (used for the
+   * bottom half of even-pip layouts).
+   */
+  function pipNode(suit, cx, cy, size, rotated) {
+    const s = size / 100;
+    const sx = rotated ? -s : s;
+    const sy = rotated ? -s : s;
+    return (
+      `<g transform="translate(${cx} ${cy}) scale(${sx} ${sy}) translate(-50 -50)">` +
+      SUIT_SHAPE[suit] +
+      "</g>"
+    );
   }
 
   /* ----- Pip layouts -----
-   * The body SVG uses viewBox "0 0 100 140" (matching the 96:134 card
-   * aspect). Because the body is in the centre column of a 3-column
-   * grid, the corner indices only block the top-left (x<20, y<42 in
-   * viewBox units) and bottom-right (x>80, y>98) rectangles. The
-   * whole rest of the body is free for pip art, so pips stretch from
-   * y≈22 near the top to y≈118 near the bottom — far bigger than the
-   * old squeezed middle-strip layout.
+   * The body SVG uses viewBox "0 0 100 140" (matching the 96:134
+   * card aspect). Because the body sits in the centre column of a
+   * 3-column grid, the corner indices only block the top-left
+   * (x<20, y<42) and bottom-right (x>80, y>98) viewBox rectangles —
+   * the rest of the body is free for pip art. Pips therefore stretch
+   * from y≈22 near the top to y≈118 near the bottom.
    *
-   * `r: true` rotates that pip 180° (bottom half is the mirrored
-   * upside-down version).
+   * `r: true` rotates that pip 180° (bottom half of an even layout).
    */
   const PIP_LAYOUTS = {
     "2":  [[50, 30], [50, 110, true]],
@@ -38,42 +85,42 @@
     "10": [[35, 22], [65, 22], [50, 40], [35, 58], [65, 58], [35, 82, true], [65, 82, true], [50, 100, true], [35, 118, true], [65, 118, true]]
   };
 
-  // Pip glyph font-size in viewBox units. Generous — the body region
-  // spans the whole card now so pips can be big icons. Multi-row
-  // layouts step the size down so adjacent rows don't overlap.
+  // Pip size (viewBox units) per rank — generous for small counts,
+  // scaled down for high counts so adjacent rows don't crowd each
+  // other. With SVG-path pips the visible glyph fills the size box
+  // (no font padding), so these are noticeably bigger than the old
+  // text-glyph equivalents at the same number.
   const PIP_SIZE = {
-    "2": 44, "3": 36, "4": 36, "5": 30, "6": 28, "7": 24, "8": 22, "9": 22, "10": 18
+    "2": 48, "3": 40, "4": 38, "5": 32, "6": 30, "7": 26, "8": 24, "9": 22, "10": 18
   };
 
-  // Centre of the card in the viewBox — used by the Ace and face-card
-  // ornaments.
+  // Centre of the card in the viewBox.
   const BODY_MID_Y = 70;
 
   function pipsSvg(rank, suit) {
-    const color = D.SUIT_COLOR[suit] === "red" ? "#c11414" : "#1a1a1a";
-    const glyph = escapeSvg(D.SUIT_GLYPH[suit]);
+    const color = suitColor(suit);
     const size = PIP_SIZE[rank] || 18;
-    const pips = PIP_LAYOUTS[rank].map(([x, y, rot]) => {
-      const t = rot ? ` transform="rotate(180 ${x} ${y})"` : "";
-      return `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central"
-              font-size="${size}" fill="${color}"${t}>${glyph}</text>`;
-    }).join("");
-    return `<svg viewBox="0 0 100 140" preserveAspectRatio="none"
-                 xmlns="http://www.w3.org/2000/svg">${pips}</svg>`;
+    const pips = PIP_LAYOUTS[rank]
+      .map(([x, y, rot]) => pipNode(suit, x, y, size, !!rot))
+      .join("");
+    return (
+      `<svg viewBox="0 0 100 140" preserveAspectRatio="none" ` +
+      `xmlns="http://www.w3.org/2000/svg"><g fill="${color}">${pips}</g></svg>`
+    );
   }
 
   function aceSvg(suit) {
-    const color = D.SUIT_COLOR[suit] === "red" ? "#c11414" : "#1a1a1a";
-    const glyph = escapeSvg(D.SUIT_GLYPH[suit]);
-    return `<svg viewBox="0 0 100 140" preserveAspectRatio="none"
-                 xmlns="http://www.w3.org/2000/svg">
-      <text x="50" y="${BODY_MID_Y}" text-anchor="middle" dominant-baseline="central"
-            font-size="80" fill="${color}">${glyph}</text>
-    </svg>`;
+    const color = suitColor(suit);
+    return (
+      `<svg viewBox="0 0 100 140" preserveAspectRatio="none" ` +
+      `xmlns="http://www.w3.org/2000/svg"><g fill="${color}">` +
+      pipNode(suit, 50, BODY_MID_Y, 90, false) +
+      "</g></svg>"
+    );
   }
 
   function faceCardSvg(rank, suit) {
-    const color = D.SUIT_COLOR[suit] === "red" ? "#c11414" : "#1a1a1a";
+    const color = suitColor(suit);
     const accent = D.SUIT_COLOR[suit] === "red" ? "#8a0c0c" : "#404040";
 
     let ornament = "";
@@ -134,11 +181,20 @@
     return pipsSvg(rank, suit);
   }
 
-  function indexHtml(card) {
+  /** Corner suit icon — same SVG path as the body pips, sized via
+   * CSS width/height. The element is `display: block` so it stacks
+   * cleanly under the rank text. */
+  function cornerSuitSvg(suit) {
+    const color = suitColor(suit);
     return (
-      `<span class="rank">${card.rank}</span>` +
-      `<span class="suit">${D.SUIT_GLYPH[card.suit]}</span>`
+      `<svg class="suit" viewBox="0 0 100 100" ` +
+      `xmlns="http://www.w3.org/2000/svg" aria-hidden="true">` +
+      `<g fill="${color}">${SUIT_SHAPE[suit]}</g></svg>`
     );
+  }
+
+  function indexHtml(card) {
+    return `<span class="rank">${card.rank}</span>` + cornerSuitSvg(card.suit);
   }
 
   function createCardElement(card) {

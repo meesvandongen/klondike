@@ -10,7 +10,7 @@
   --tableau-fan-down: 13px;
   --pile-gap: 18px;
   --corner-rank-size: 18px;
-  --corner-suit-size: 14px;
+  --corner-suit-size: 18px;
   --peaks-row-y: 34px;
   --pyramid-row-y: 38px;
   --pyramid-col-gap: 6px;
@@ -225,11 +225,15 @@ html, body {
 .card-bottom .rank {
   font-size: var(--corner-rank-size);
   letter-spacing: -0.5px;
+  line-height: 1;
 }
 .card-top .suit,
 .card-bottom .suit {
-  font-size: var(--corner-suit-size);
+  width: var(--corner-suit-size);
+  height: var(--corner-suit-size);
+  display: block;
   margin-top: 1px;
+  overflow: visible;
 }
 
 .card.dragging { box-shadow: var(--shadow-strong); cursor: grabbing; }

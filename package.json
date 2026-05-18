@@ -1,24 +1,35 @@
 {
   "name": "solitaire-suite",
   "version": "1.0.0",
-  "description": "Klondike, FreeCell, Spider, TriPeaks and Pyramid built with Tauri",
+  "description": "Klondike, FreeCell, Spider, TriPeaks and Pyramid built with Tauri + SolidJS",
   "author": "Solitaire",
   "license": "MIT",
+  "type": "module",
   "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
     "tauri": "tauri",
-    "dev": "tauri dev",
-    "dev:klondike": "tauri dev",
-    "dev:freecell": "tauri dev --config src-tauri/tauri.freecell.conf.json",
-    "dev:spider": "tauri dev --config src-tauri/tauri.spider.conf.json",
-    "dev:tripeaks": "tauri dev --config src-tauri/tauri.tripeaks.conf.json",
-    "dev:pyramid": "tauri dev --config src-tauri/tauri.pyramid.conf.json",
-    "build:klondike": "tauri build",
-    "build:freecell": "tauri build --config src-tauri/tauri.freecell.conf.json",
-    "build:spider": "tauri build --config src-tauri/tauri.spider.conf.json",
-    "build:tripeaks": "tauri build --config src-tauri/tauri.tripeaks.conf.json",
-    "build:pyramid": "tauri build --config src-tauri/tauri.pyramid.conf.json"
+    "tauri:dev": "tauri dev",
+    "tauri:dev:freecell": "tauri dev --config src-tauri/tauri.freecell.conf.json",
+    "tauri:dev:spider": "tauri dev --config src-tauri/tauri.spider.conf.json",
+    "tauri:dev:tripeaks": "tauri dev --config src-tauri/tauri.tripeaks.conf.json",
+    "tauri:dev:pyramid": "tauri dev --config src-tauri/tauri.pyramid.conf.json",
+    "tauri:build": "tauri build",
+    "tauri:build:freecell": "tauri build --config src-tauri/tauri.freecell.conf.json",
+    "tauri:build:spider": "tauri build --config src-tauri/tauri.spider.conf.json",
+    "tauri:build:tripeaks": "tauri build --config src-tauri/tauri.tripeaks.conf.json",
+    "tauri:build:pyramid": "tauri build --config src-tauri/tauri.pyramid.conf.json"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2.0.0"
+    "@tauri-apps/cli": "^2.0.0",
+    "@types/node": "^25.9.0",
+    "typescript": "^5.5.0",
+    "vite": "^5.4.0",
+    "vite-plugin-solid": "^2.10.0"
+  },
+  "dependencies": {
+    "solid-js": "^1.8.0"
   }
 }

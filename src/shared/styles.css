@@ -47,6 +47,11 @@ html, body {
     );
 }
 
+#root, #app {
+  width: 100%;
+  height: 100%;
+}
+
 /* ---------- Pile slots ---------- */
 
 .pile-slot {
@@ -91,27 +96,11 @@ html, body {
 
 /* ---------- Cards ----------
  *
- * Layout is a 3-column grid:
- *
- *   ┌──────┬──────────────┬──────┐
- *   │ TL   │              │      │
- *   │      │   pip art    │      │
- *   │      │   spans the  │      │
- *   │      │  whole card  │      │
- *   │      │              │      │
- *   │      │              │  BR  │
- *   └──────┴──────────────┴──────┘
- *
- * The body lives in the centre column and spans the full card height,
- * so the pip / ornament art can stretch right to the top and bottom
- * edges. The top-left index sits in the left column anchored to the
- * card's top edge; the bottom-right index sits in the right column
- * anchored to the bottom edge and rotated 180°.
- *
- * Column widths are explicit (`--corner-w`) so layout doesn't depend
- * on font/glyph metrics — the corner indices are sized like icons
- * inside the column, and oversized ranks like "10" can overflow into
- * the body area without disturbing the grid.
+ * 3-column CSS grid: corner-w | 1fr | corner-w. The card-body lives
+ * in the centre column ONLY, so its pip art is physically separated
+ * from the corner indices (different grid columns can't overlap).
+ * Inside the body, PipGrid uses its own grid to place each pip in a
+ * dedicated cell — adjacent pips can never collide either.
  */
 
 .card {
@@ -166,27 +155,16 @@ html, body {
 .card.face-up.red { color: var(--red); }
 .card.face-up.black { color: var(--black); }
 
-/* Body spans all three columns and the full single row so the pip
- * art / ornament fills the entire card. Corner indices overlay it
- * at a higher z-index. */
 .card-body {
-  grid-column: card-l / card-r;
+  grid-column: body-l / body-r;
   grid-row: 1;
   position: relative;
   overflow: hidden;
   pointer-events: none;
-  z-index: 0;
-}
-.card-body svg {
-  width: 100%;
-  height: 100%;
-  display: block;
 }
 
-/* Top-left corner: anchored to the top of the card in the left
- * column. align-self: start pins it to the top of the card; the
- * height is exactly --card-top-h so a card stacked underneath
- * reveals exactly the corner index. */
+/* Corner indices: rank text + suit SVG icon, fixed height that
+ * equals the visible fan-up slice when cards are stacked. */
 .card-top,
 .card-bottom {
   display: flex;
@@ -199,7 +177,6 @@ html, body {
   font-weight: 700;
   line-height: 1;
   pointer-events: none;
-  z-index: 1;
 }
 
 .card-top {
@@ -208,11 +185,8 @@ html, body {
   align-self: start;
 }
 
-/* Bottom-right corner: anchored to the bottom of the card in the
- * right column, then rotated 180° so the index reads as the
- * traditional mirrored corner. Inside the unrotated element the rank
- * is on top and the suit below; after the 180° rotation the rank
- * lands at the card's bottom-right edge with the suit just above it. */
+/* Bottom-right corner: anchored to bottom, rotated 180° so the
+ * index reads as the traditional mirrored corner. */
 .card-bottom {
   grid-column: body-r / card-r;
   grid-row: 1;
@@ -226,7 +200,9 @@ html, body {
   font-size: var(--corner-rank-size);
   letter-spacing: -0.5px;
   line-height: 1;
+  color: inherit;
 }
+
 .card-top .suit,
 .card-bottom .suit {
   width: var(--corner-suit-size);
@@ -234,8 +210,72 @@ html, body {
   display: block;
   margin-top: 1px;
   overflow: visible;
+  flex: 0 0 auto;
 }
 
+/* ---------- Body art ---------- */
+
+/* PipGrid — number cards. 3-column grid (L/C/R), variable rows. Each
+ * pip-cell gets exactly one square SVG, sized to fit within the cell
+ * with `aspect-ratio: 1` so pips never overlap each other. */
+.pip-grid {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  padding: 3px 2px;
+  box-sizing: border-box;
+}
+
+.pip-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.pip-cell svg {
+  display: block;
+  aspect-ratio: 1 / 1;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  flex: 0 0 auto;
+}
+
+.pip-cell svg.rotated {
+  transform: rotate(180deg);
+}
+
+/* Ace — one big pip centred in the body, sized to fill it. */
+.ace-art {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  box-sizing: border-box;
+}
+.ace-art svg {
+  display: block;
+  aspect-ratio: 1 / 1;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+}
+
+.face-card-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Drag / hint states */
 .card.dragging { box-shadow: var(--shadow-strong); cursor: grabbing; }
 
 .card.hint-flash { animation: hint-pulse 0.6s ease 2; }

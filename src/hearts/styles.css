@@ -1,0 +1,209 @@
+/* ---------- Hearts board layout ----------
+ *
+ * Hearts puts the four players around a central trick area. We use
+ * a 3-row grid: opponents on top, side opponents + trick in the
+ * middle, the human hand on the bottom.
+ *
+ *   ┌──────────────┐
+ *   │     North     │
+ *   │ West [trick] E│
+ *   │     South     │
+ *   └──────────────┘
+ *
+ *  - South: cards fanned upright, clickable.
+ *  - East/West: a short vertical fan of card backs with a count.
+ *  - North: a short horizontal fan of card backs with a count.
+ *  - Trick area: four card slots arranged compass-style.
+ */
+
+#board.hearts-board {
+  position: relative;
+  width: 100%;
+  height: calc(100% - 28px);
+  padding: 20px 24px 12px 24px;
+  display: grid;
+  grid-template-rows:
+    calc(var(--card-h) + 24px)         /* north */
+    1fr                                /* middle row with trick */
+    calc(var(--card-h) + 60px);        /* south hand + selected */
+  grid-template-columns:
+    calc(var(--card-h) + 50px)         /* west */
+    1fr                                /* center */
+    calc(var(--card-h) + 50px);        /* east */
+  gap: 6px;
+  align-items: center;
+  justify-items: center;
+}
+
+.seat {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.seat .seat-label {
+  position: absolute;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.75);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  letter-spacing: 0.4px;
+  pointer-events: none;
+}
+
+.seat .seat-label.tag-current {
+  color: #ffd54a;
+  font-weight: 700;
+}
+
+.seat .seat-score {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.75);
+  margin-top: 2px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+/* North/South seats span the middle column, occupy the top/bottom row. */
+.seat-north { grid-column: 1 / 4; grid-row: 1; flex-direction: column; }
+.seat-south { grid-column: 1 / 4; grid-row: 3; flex-direction: column; justify-content: flex-start; padding-top: 10px; }
+.seat-west  { grid-column: 1; grid-row: 2; }
+.seat-east  { grid-column: 3; grid-row: 2; }
+.seat-trick { grid-column: 2; grid-row: 2; }
+
+.seat-north .seat-label { top: -2px; left: 50%; transform: translateX(-50%); }
+.seat-south .seat-label { bottom: -2px; left: 50%; transform: translateX(-50%); }
+.seat-west .seat-label  { left: -2px; top: 50%; transform: translateY(-50%) rotate(-90deg); transform-origin: left center; }
+.seat-east .seat-label  { right: -2px; top: 50%; transform: translateY(-50%) rotate(90deg); transform-origin: right center; }
+
+/* ---------- Fans (horizontal) ---------- */
+
+.hand-fan-h {
+  position: relative;
+  width: 100%;
+  height: var(--card-h);
+}
+
+.hand-fan-h .card {
+  position: absolute;
+  top: 0;
+  cursor: default;
+}
+
+.hand-fan-h .card[data-movable="1"] {
+  cursor: pointer;
+  transition: transform 80ms ease;
+}
+
+.hand-fan-h .card[data-movable="1"]:hover {
+  transform: translateY(-10px);
+  box-shadow: var(--shadow-strong);
+}
+
+.hand-fan-h .card.selected {
+  transform: translateY(-18px);
+  box-shadow: 0 0 0 3px #ffd54a, var(--shadow-strong);
+}
+
+.hand-fan-h .card.illegal {
+  filter: brightness(0.72) saturate(0.85);
+  cursor: not-allowed;
+}
+
+/* ---------- Fans (vertical, for E/W) ---------- */
+
+.hand-fan-v {
+  position: relative;
+  width: var(--card-h);
+  height: 100%;
+  min-height: calc(var(--card-h) + 60px);
+}
+
+.hand-fan-v .card {
+  position: absolute;
+  /* Side hands show the long edge of the card. We rotate 90° and
+   * compensate the translate so the rotated stack lines up
+   * vertically. */
+  width: var(--card-h);
+  height: var(--card-w);
+  transform-origin: top left;
+}
+
+.hand-fan-v .card .card-top,
+.hand-fan-v .card .card-bottom { display: none; }
+
+/* ---------- Trick area ---------- */
+
+#trick-area {
+  position: relative;
+  width: calc(var(--card-w) * 3 + 24px);
+  height: calc(var(--card-h) * 2 - 30px);
+  margin: 0 auto;
+}
+
+#trick-area .trick-slot {
+  position: absolute;
+  width: var(--card-w);
+  height: var(--card-h);
+}
+
+#trick-area .trick-south  { left: 50%; bottom: 0;    transform: translateX(-50%); }
+#trick-area .trick-north  { left: 50%; top: 0;       transform: translateX(-50%); }
+#trick-area .trick-west   { left: 0;   top: 50%;     transform: translateY(-50%); }
+#trick-area .trick-east   { right: 0;  top: 50%;     transform: translateY(-50%); }
+
+#trick-area .arrow {
+  position: absolute;
+  font-size: 24px;
+  color: rgba(255, 213, 74, 0.85);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+#trick-area .arrow.dir-S { left: 50%; bottom: calc(var(--card-h) + 4px); transform: translateX(-50%); }
+#trick-area .arrow.dir-N { left: 50%; top: calc(var(--card-h) + 4px); transform: translateX(-50%); }
+#trick-area .arrow.dir-W { left: calc(var(--card-w) + 4px); top: 50%; transform: translateY(-50%); }
+#trick-area .arrow.dir-E { right: calc(var(--card-w) + 4px); top: 50%; transform: translateY(-50%); }
+
+/* ---------- Pass-phase chrome ---------- */
+
+#pass-banner {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: 4px;
+  font-size: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+#pass-action {
+  position: absolute;
+  top: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 14px;
+  background: linear-gradient(to bottom, #fafafa 0%, #dcdcdc 100%);
+  border: 1px solid #888;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+}
+#pass-action[disabled] {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* ---------- Score table ---------- */
+
+#scores-popup table { border-collapse: collapse; width: 100%; }
+#scores-popup td, #scores-popup th { padding: 4px 10px; text-align: right; }
+#scores-popup th:first-child, #scores-popup td:first-child { text-align: left; color: #444; }
+#scores-popup th { border-bottom: 1px solid #888; }

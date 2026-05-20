@@ -5,28 +5,94 @@
     <title>Solitaire Suite</title>
     <link rel="stylesheet" href="./shared/styles.css" />
     <style>
-      body { display: flex; align-items: center; justify-content: center; }
-      ul { list-style: none; padding: 0; }
-      li { margin: 8px 0; }
-      a {
-        color: #fff;
-        font-size: 18px;
-        text-decoration: none;
-        padding: 6px 12px;
-        border-radius: 6px;
-        background: rgba(0, 0, 0, 0.25);
-        border: 1px solid rgba(255, 255, 255, 0.3);
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 18px;
       }
-      a:hover { background: rgba(0, 0, 0, 0.4); }
+      h1 {
+        font-weight: 300;
+        margin: 0;
+        font-size: 32px;
+        letter-spacing: 1px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.45);
+      }
+      .tagline {
+        margin: 0 0 12px 0;
+        color: rgba(255, 255, 255, 0.85);
+        font-size: 14px;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+      }
+      ul.games {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        grid-template-columns: repeat(3, 200px);
+        gap: 16px;
+      }
+      ul.games li { margin: 0; }
+      ul.games a {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        color: #fff;
+        text-decoration: none;
+        padding: 18px 12px;
+        border-radius: 8px;
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.4));
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+        transition: transform 80ms ease, background 80ms ease;
+      }
+      ul.games a:hover {
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.55));
+        transform: translateY(-2px);
+        border-color: rgba(255, 213, 74, 0.7);
+      }
+      ul.games .title {
+        font-size: 18px;
+        font-weight: 600;
+        letter-spacing: 0.4px;
+      }
+      ul.games .desc {
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.7);
+        text-align: center;
+      }
     </style>
   </head>
   <body>
-    <ul>
-      <li><a href="./klondike/index.html">Klondike</a></li>
-      <li><a href="./freecell/index.html">FreeCell</a></li>
-      <li><a href="./spider/index.html">Spider</a></li>
-      <li><a href="./tripeaks/index.html">TriPeaks</a></li>
-      <li><a href="./pyramid/index.html">Pyramid</a></li>
+    <h1>Solitaire Suite</h1>
+    <p class="tagline">Six classic card games in the Windows Vista style.</p>
+    <ul class="games">
+      <li><a href="./klondike/index.html">
+        <span class="title">Klondike</span>
+        <span class="desc">Build foundations A→K by suit. Guaranteed-winnable deals.</span>
+      </a></li>
+      <li><a href="./freecell/index.html">
+        <span class="title">FreeCell</span>
+        <span class="desc">4 free cells; almost every deal is solvable.</span>
+      </a></li>
+      <li><a href="./spider/index.html">
+        <span class="title">Spider</span>
+        <span class="desc">Spades only — clear eight K→A runs.</span>
+      </a></li>
+      <li><a href="./tripeaks/index.html">
+        <span class="title">TriPeaks</span>
+        <span class="desc">Chain consecutive ranks to clear three peaks.</span>
+      </a></li>
+      <li><a href="./pyramid/index.html">
+        <span class="title">Pyramid</span>
+        <span class="desc">Pair cards summing to 13 to clear the pyramid.</span>
+      </a></li>
+      <li><a href="./hearts/index.html">
+        <span class="title">Hearts</span>
+        <span class="desc">Avoid hearts and the Queen of Spades. Lowest total wins.</span>
+      </a></li>
     </ul>
   </body>
 </html>

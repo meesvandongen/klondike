@@ -14,10 +14,10 @@
       {
         "title": "Pyramid",
         "url": "pyramid/index.html",
-        "width": 1000,
-        "height": 720,
-        "minWidth": 820,
-        "minHeight": 600,
+        "width": 1024,
+        "height": 800,
+        "minWidth": 880,
+        "minHeight": 680,
         "resizable": true,
         "fullscreen": false
       }

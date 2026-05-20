@@ -1,8 +1,8 @@
 # Solitaire Suite
 
-Five classic solitaire variants — **Klondike**, **FreeCell**, **Spider** (1-suit), **TriPeaks** and **Pyramid** — built with [Tauri](https://tauri.app) + Rust, styled after the Windows Vista native edition: deep felt background, classic playing-card layout, native window menu, and shared card scale.
+Six classic card games — **Klondike**, **FreeCell**, **Spider** (1-suit), **TriPeaks**, **Pyramid** and **Hearts** — built with [Tauri](https://tauri.app) + Rust + SolidJS, styled after the Windows Vista native editions: deep felt background, classic playing-card layout, native window menu, and shared card scale.
 
-Each variant ships as its own executable (Klondike.exe / FreeCell.dmg / etc.) with its own icon and identifier.
+Each variant ships as its own executable (Klondike.exe / FreeCell.dmg / etc.) with its own icon and identifier, and the whole suite is also published as a single static web bundle.
 
 ## Variants
 
@@ -13,28 +13,30 @@ Each variant ships as its own executable (Klondike.exe / FreeCell.dmg / etc.) wi
 | Spider    | Drag, click-to-act | 1-suit (8 sequences of Spades), stock deals 10 at once  |
 | TriPeaks  | Click only         | Chain consecutive ranks (A↔K wraps) for bonus points    |
 | Pyramid   | Click only         | Pair cards summing to 13; 3 stock recycles              |
+| Hearts    | Click only         | Trick-taking against 3 AI opponents; avoid hearts + Q♠  |
 
 ## Shared base
 
 The frontend lives entirely under `src/`. A `src/shared/` directory provides the reusable infrastructure used by every variant:
 
-- `deck.js`       — suits, ranks, glyphs, deck builder
-- `card.js`       — DOM card factory + SVG face-card art
-- `drag.js`       — pointer-capture-based drag/drop manager (used by drag-based games)
-- `modal.js`      — Vista-style dialog
-- `menu.js`       — Tauri menu listener + dispatch
-- `hotkeys.js`    — `F2`, `Ctrl/Cmd+Z`, `H`, `Ctrl/Cmd+A` mapping + Escape/Enter modal handling
-- `stats.js`      — per-game localStorage stats
-- `status.js`     — status-bar updater
-- `overlay.js`    — "dealing…" overlay
-- `styles.css`    — shared Vista board / card / modal / status styling
-- `utils.js`      — `formatTime`, `cssVarPx`, `shuffle`, `clone`
+- `deck.ts`        — suits, ranks, glyphs, deck builder
+- `Card.tsx`       — Solid card component + SVG face-card art
+- `drag.ts`        — pointer-capture-based drag/drop manager (used by drag-based games)
+- `Modal.tsx`      — Vista-style dialog
+- `menu.ts`        — Tauri menu listener + dispatch
+- `hotkeys.ts`     — `F2`, `Ctrl/Cmd+Z`, `H`, `Ctrl/Cmd+A` mapping + Escape/Enter modal handling
+- `stats.ts`       — per-game localStorage stats
+- `Status.tsx`     — status-bar (score / time / moves)
+- `Overlay.tsx`    — "dealing…" overlay
+- `styles.css`     — shared Vista board / card / modal / status styling
+- `utils.ts`       — `formatTime`, `cssVarPx`, `shuffle`, `clone`
 
 Each variant directory (`src/<game>/`) contains only the game-specific bits:
 
-- `game.js`  — rules engine (state, moves, win, undo, hint, auto-complete)
-- `solver.js` — *Klondike only*, used for winnable-deal verification
-- `main.js`  — wires rendering, drag/click, dialogs and menu to the engine
+- `game.ts`  — rules engine (state, moves, win, undo, hint, auto-complete)
+- `solver.ts` — *Klondike only*, used for winnable-deal verification
+- `ai.ts` — *Hearts only*, passing + play heuristics for the bots
+- `main.tsx` — wires rendering, drag/click, dialogs and menu to the engine
 - `index.html`, `styles.css` — board layout overrides
 
 The native menu (Game / Edit / View / Help) is defined once in `src-tauri/src/lib.rs` and emits a generic `menu` event; each variant decides how to handle the action (or whether to ignore it).
@@ -47,24 +49,36 @@ The native menu (Game / Edit / View / Help) is defined once in `src-tauri/src/li
 
 ## Running a variant locally
 
+Desktop (Tauri shell):
+
 ```bash
 npm install
 
-npm run dev:klondike
-npm run dev:freecell
-npm run dev:spider
-npm run dev:tripeaks
-npm run dev:pyramid
+npm run tauri:dev               # default = Klondike
+npm run tauri:dev:freecell
+npm run tauri:dev:spider
+npm run tauri:dev:tripeaks
+npm run tauri:dev:pyramid
+npm run tauri:dev:hearts
+```
+
+Browser only (Vite dev server, opens at `localhost:1420`):
+
+```bash
+npm run dev
+# then open /klondike/, /freecell/, /spider/, /tripeaks/,
+#                /pyramid/, /hearts/ or just / for the landing page.
 ```
 
 ## Building executables
 
 ```bash
-npm run build:klondike
-npm run build:freecell
-npm run build:spider
-npm run build:tripeaks
-npm run build:pyramid
+npm run tauri:build               # Klondike
+npm run tauri:build:freecell
+npm run tauri:build:spider
+npm run tauri:build:tripeaks
+npm run tauri:build:pyramid
+npm run tauri:build:hearts
 ```
 
 Each command writes to `src-tauri/target/release/bundle/`:
@@ -73,6 +87,35 @@ Each command writes to `src-tauri/target/release/bundle/`:
 - Windows: `bundle/nsis/<Variant>_*-setup.exe`
 - Linux: `bundle/deb/*.deb`, `bundle/appimage/*.AppImage`
 
+## Building the web bundle
+
+```bash
+npm run build
+```
+
+Writes a static site to `dist/` — open `dist/index.html` for the
+landing page, or any `dist/<game>/index.html` directly.
+
+## Icons
+
+The icon set under `src-tauri/icons/<game>/` is generated from
+`scripts/make_icons.py`. The script renders Vista-style felt-and-cards
+artwork into 32×32 / 128×128 / 256×256 PNGs plus multi-size `.ico` and
+`.icns` bundles. Re-run after editing the script:
+
+```bash
+python3 scripts/make_icons.py
+```
+
 ## CI
 
-`.github/workflows/build.yml` runs a **(platform × variant)** matrix — 10 parallel jobs — building each variant for macOS (universal `.dmg`) and Windows (NSIS `.exe`). Each job uploads its own executable as an artifact (no zipping); on a `v*` tag push, every artifact is attached to a GitHub Release.
+`.github/workflows/build.yml` runs three pipelines:
+
+1. **Build** — a **(platform × variant)** matrix produces a `.dmg`
+   for macOS (universal) and an `.exe` for Windows for each of the
+   six games (12 parallel jobs). Artifacts are uploaded individually.
+2. **Web bundle** — a single job runs `npm run build` and uploads the
+   `dist/` tree as the `solitaire-web` artifact; on `main` it also
+   publishes to GitHub Pages.
+3. **Release** — on a `v*` tag push, every desktop artifact is
+   attached to the matching GitHub Release.

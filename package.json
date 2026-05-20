@@ -16,11 +16,13 @@
     "tauri:dev:spider": "tauri dev --config src-tauri/tauri.spider.conf.json",
     "tauri:dev:tripeaks": "tauri dev --config src-tauri/tauri.tripeaks.conf.json",
     "tauri:dev:pyramid": "tauri dev --config src-tauri/tauri.pyramid.conf.json",
+    "tauri:dev:hearts": "tauri dev --config src-tauri/tauri.hearts.conf.json",
     "tauri:build": "tauri build",
     "tauri:build:freecell": "tauri build --config src-tauri/tauri.freecell.conf.json",
     "tauri:build:spider": "tauri build --config src-tauri/tauri.spider.conf.json",
     "tauri:build:tripeaks": "tauri build --config src-tauri/tauri.tripeaks.conf.json",
-    "tauri:build:pyramid": "tauri build --config src-tauri/tauri.pyramid.conf.json"
+    "tauri:build:pyramid": "tauri build --config src-tauri/tauri.pyramid.conf.json",
+    "tauri:build:hearts": "tauri build --config src-tauri/tauri.hearts.conf.json"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^2.0.0",

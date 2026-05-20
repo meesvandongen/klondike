@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "TriPeaks",
+  "productName": "Hearts",
   "version": "1.0.0",
-  "identifier": "com.solitairesuite.tripeaks",
+  "identifier": "com.solitairesuite.hearts",
   "build": {
     "beforeDevCommand": "npm run dev",
     "beforeBuildCommand": "npm run build",
@@ -12,12 +12,12 @@
   "app": {
     "windows": [
       {
-        "title": "TriPeaks",
-        "url": "tripeaks/index.html",
-        "width": 1100,
-        "height": 780,
-        "minWidth": 960,
-        "minHeight": 680,
+        "title": "Hearts",
+        "url": "hearts/index.html",
+        "width": 1180,
+        "height": 860,
+        "minWidth": 980,
+        "minHeight": 720,
         "resizable": true,
         "fullscreen": false
       }
@@ -29,18 +29,18 @@
     "active": true,
     "targets": ["nsis", "dmg", "deb", "appimage"],
     "category": "Game",
-    "shortDescription": "TriPeaks Solitaire",
-    "longDescription": "TriPeaks solitaire — chain cards adjacent in rank to clear three peaks.",
+    "shortDescription": "Hearts",
+    "longDescription": "Hearts — avoid hearts and the Queen of Spades. Lowest total wins.",
     "icon": [
-      "icons/tripeaks/32x32.png",
-      "icons/tripeaks/128x128.png",
-      "icons/tripeaks/128x128@2x.png",
-      "icons/tripeaks/icon.icns",
-      "icons/tripeaks/icon.ico"
+      "icons/hearts/32x32.png",
+      "icons/hearts/128x128.png",
+      "icons/hearts/128x128@2x.png",
+      "icons/hearts/icon.icns",
+      "icons/hearts/icon.ico"
     ],
     "windows": {
       "nsis": {
-        "installerIcon": "icons/tripeaks/icon.ico",
+        "installerIcon": "icons/hearts/icon.ico",
         "installMode": "perMachine",
         "displayLanguageSelector": false
       }

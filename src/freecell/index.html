@@ -4,71 +4,10 @@
     <meta charset="utf-8" />
     <title>FreeCell</title>
     <link rel="stylesheet" href="../shared/styles.css" />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="./styles.css" />
   </head>
   <body data-game="freecell">
-    <div id="board" class="freecell-board">
-      <div id="top-row">
-        <div class="pile-slot cell" data-pile="cell" data-index="0"></div>
-        <div class="pile-slot cell" data-pile="cell" data-index="1"></div>
-        <div class="pile-slot cell" data-pile="cell" data-index="2"></div>
-        <div class="pile-slot cell" data-pile="cell" data-index="3"></div>
-        <div class="pile-slot foundation" data-pile="foundation" data-index="0"></div>
-        <div class="pile-slot foundation" data-pile="foundation" data-index="1"></div>
-        <div class="pile-slot foundation" data-pile="foundation" data-index="2"></div>
-        <div class="pile-slot foundation" data-pile="foundation" data-index="3"></div>
-      </div>
-      <div id="tableau-row">
-        <div class="pile-slot tall" data-pile="tableau" data-index="0"></div>
-        <div class="pile-slot tall" data-pile="tableau" data-index="1"></div>
-        <div class="pile-slot tall" data-pile="tableau" data-index="2"></div>
-        <div class="pile-slot tall" data-pile="tableau" data-index="3"></div>
-        <div class="pile-slot tall" data-pile="tableau" data-index="4"></div>
-        <div class="pile-slot tall" data-pile="tableau" data-index="5"></div>
-        <div class="pile-slot tall" data-pile="tableau" data-index="6"></div>
-        <div class="pile-slot tall" data-pile="tableau" data-index="7"></div>
-      </div>
-    </div>
-
-    <div id="status-bar">
-      <span id="status-score">Score: 0</span>
-      <span id="status-time">Time: 0</span>
-      <span id="status-moves">Moves: 0</span>
-    </div>
-
-    <div id="modal-root" class="hidden">
-      <div class="modal-backdrop"></div>
-      <div class="modal">
-        <div class="modal-title-bar">
-          <span class="modal-title" id="modal-title">Title</span>
-          <button class="modal-close" id="modal-close" aria-label="Close">×</button>
-        </div>
-        <div class="modal-content" id="modal-content"></div>
-        <div class="modal-buttons" id="modal-buttons"></div>
-      </div>
-    </div>
-
-    <div id="dealing-overlay" class="hidden">
-      <div class="dealing-card"></div>
-      <div class="dealing-label">Dealing…</div>
-    </div>
-
-    <div id="drag-layer"></div>
-
-    <script src="../shared/utils.js"></script>
-    <script src="../shared/deck.js"></script>
-    <script src="../shared/card.js"></script>
-    <script src="../shared/modal.js"></script>
-    <script src="../shared/stats.js"></script>
-    <script src="../shared/options.js"></script>
-    <script src="../shared/overlay.js"></script>
-    <script src="../shared/status.js"></script>
-    <script src="../shared/menu.js"></script>
-    <script src="../shared/hotkeys.js"></script>
-    <script src="../shared/zoom.js"></script>
-    <script src="../shared/drag.js"></script>
-
-    <script src="game.js"></script>
-    <script src="main.js"></script>
+    <div id="app"></div>
+    <script type="module" src="./main.tsx"></script>
   </body>
 </html>

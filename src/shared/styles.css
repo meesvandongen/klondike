@@ -4,7 +4,8 @@
   --card-w: 96px;
   --card-h: 134px;
   --card-radius: 7px;
-  --card-top-h: 38px;
+  --card-top-h: 40px;
+  --corner-w: 20px;
   --tableau-fan-up: 40px;
   --tableau-fan-down: 13px;
   --pile-gap: 18px;
@@ -44,6 +45,11 @@ html, body {
       #196a2a 45%,
       var(--felt-2) 100%
     );
+}
+
+#root, #app {
+  width: 100%;
+  height: 100%;
 }
 
 /* ---------- Pile slots ---------- */
@@ -88,7 +94,14 @@ html, body {
   pointer-events: none;
 }
 
-/* ---------- Cards ---------- */
+/* ---------- Cards ----------
+ *
+ * 3-column CSS grid: corner-w | 1fr | corner-w. The card-body lives
+ * in the centre column ONLY, so its pip art is physically separated
+ * from the corner indices (different grid columns can't overlap).
+ * Inside the body, PipGrid uses its own grid to place each pip in a
+ * dedicated cell — adjacent pips can never collide either.
+ */
 
 .card {
   position: absolute;
@@ -102,8 +115,12 @@ html, body {
   transition: box-shadow 0.1s ease;
   overflow: hidden;
   will-change: transform;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns:
+    [card-l] var(--corner-w) [body-l]
+    1fr
+    [body-r] var(--corner-w) [card-r];
+  grid-template-rows: 1fr;
 }
 
 .card[data-movable="1"] { cursor: grab; }
@@ -138,64 +155,127 @@ html, body {
 .card.face-up.red { color: var(--red); }
 .card.face-up.black { color: var(--black); }
 
-/* Top-left index: rank on top, suit pip below, left-aligned.
- * The whole card-top is exactly --card-top-h tall, which is the
- * amount of card revealed when stacked under another card. */
-.card-top {
-  flex-shrink: 0;
-  height: var(--card-top-h);
-  padding: 3px 5px 0 6px;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  font-family: "Georgia", "Times New Roman", serif;
-  font-weight: 700;
-  line-height: 1;
-}
-.card-top .rank,
-.card-bottom .rank {
-  font-size: var(--corner-rank-size);
-  letter-spacing: -0.5px;
-}
-.card-top .suit,
-.card-bottom .suit {
-  font-size: var(--corner-suit-size);
-  margin-top: 1px;
-}
-
-/* Bottom-right rotated mirror — traditional playing card style.
- * About 65% the size of the top index. Rarely visible in a tableau
- * stack but shown for any card whose bottom edge is exposed. */
-.card-bottom {
-  position: absolute;
-  bottom: 3px;
-  right: 6px;
-  transform: rotate(180deg);
-  transform-origin: center;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  line-height: 1;
-  font-family: "Georgia", "Times New Roman", serif;
-  font-weight: 700;
-  pointer-events: none;
-}
-.card-bottom .rank { font-size: calc(var(--corner-rank-size) * 0.66); }
-.card-bottom .suit { font-size: calc(var(--corner-suit-size) * 0.66); margin-top: 0; }
-
-/* Body: pip pattern, ace, or face-card art — fills full body. */
 .card-body {
-  flex: 1;
+  grid-column: body-l / body-r;
+  grid-row: 1;
   position: relative;
   overflow: hidden;
   pointer-events: none;
 }
-.card-body svg {
-  width: 100%;
-  height: 100%;
-  display: block;
+
+/* Corner indices: rank text + suit SVG icon, fixed height that
+ * equals the visible fan-up slice when cards are stacked. */
+.card-top,
+.card-bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  height: var(--card-top-h);
+  padding: 3px 0 0 3px;
+  font-family: "Georgia", "Times New Roman", serif;
+  font-weight: 700;
+  line-height: 1;
+  pointer-events: none;
 }
 
+.card-top {
+  grid-column: card-l / body-l;
+  grid-row: 1;
+  align-self: start;
+}
+
+/* Bottom-right corner: anchored to bottom, rotated 180° so the
+ * index reads as the traditional mirrored corner. */
+.card-bottom {
+  grid-column: body-r / card-r;
+  grid-row: 1;
+  align-self: end;
+  transform: rotate(180deg);
+  transform-origin: center;
+}
+
+.card-top .rank,
+.card-bottom .rank {
+  font-size: var(--corner-rank-size);
+  letter-spacing: -0.5px;
+  line-height: 1;
+  color: inherit;
+}
+
+.card-top .suit,
+.card-bottom .suit {
+  width: var(--corner-suit-size);
+  height: var(--corner-suit-size);
+  display: block;
+  margin-top: 1px;
+  overflow: visible;
+  flex: 0 0 auto;
+}
+
+/* ---------- Body art ---------- */
+
+/* PipGrid — number cards. 3-column grid (L/C/R), variable rows. Each
+ * pip-cell gets exactly one square SVG, sized to fit within the cell
+ * with `aspect-ratio: 1` so pips never overlap each other. */
+.pip-grid {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  padding: 3px 2px;
+  box-sizing: border-box;
+}
+
+.pip-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.pip-cell svg {
+  display: block;
+  aspect-ratio: 1 / 1;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  flex: 0 0 auto;
+}
+
+.pip-cell svg.rotated {
+  transform: rotate(180deg);
+}
+
+/* Ace — one big pip centred in the body, sized to fill it. */
+.ace-art {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  box-sizing: border-box;
+}
+.ace-art svg {
+  display: block;
+  aspect-ratio: 1 / 1;
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+}
+
+.face-card-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* Drag / hint states */
 .card.dragging { box-shadow: var(--shadow-strong); cursor: grabbing; }
 
 .card.hint-flash { animation: hint-pulse 0.6s ease 2; }

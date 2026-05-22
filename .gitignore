@@ -9,3 +9,7 @@ npm-debug.log*
 # Tauri / Rust
 src-tauri/target/
 src-tauri/gen/
+
+# Cloudflare Wrangler
+.wrangler/
+.dev.vars

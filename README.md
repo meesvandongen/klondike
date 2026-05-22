@@ -96,6 +96,33 @@ npm run build
 Writes a static site to `dist/` — open `dist/index.html` for the
 landing page, or any `dist/<game>/index.html` directly.
 
+### Deploying to Cloudflare
+
+`wrangler.toml` at the repo root configures the site for
+**Cloudflare Workers Static Assets**: it points wrangler at
+`./dist` and uses default HTML handling (so `/hearts/` resolves to
+`/hearts/index.html` without any rewriting).
+
+For a one-off deploy from your machine:
+
+```bash
+npm install
+npm run build
+npx wrangler deploy        # or: npm run cf:deploy
+```
+
+For continuous deployment via Cloudflare's git integration
+(*Workers & Pages → Create → Workers → Connect to git*), set:
+
+- **Build command:** `npm run build`
+- **Deploy command:** `npx wrangler deploy`
+- **Root directory:** *(leave blank — project is at repo root)*
+
+The build pipeline picks up `wrangler.toml` automatically; the
+"root directory not found" error in the Cloudflare build log
+specifically means that setting is pointed at a path that doesn't
+exist in the repo.
+
 ## Icons
 
 The icon set under `src-tauri/icons/<game>/` is generated from

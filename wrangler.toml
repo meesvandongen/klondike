@@ -1,0 +1,28 @@
+#:schema node_modules/wrangler/config-schema.json
+#
+# Cloudflare Workers Static Assets configuration.
+#
+# This deploys the contents of ./dist (the Vite multi-entry output)
+# as a static site behind a Worker. No Worker script is needed —
+# `[assets].directory` is enough on its own.
+#
+# Build pipeline (configured in the Cloudflare dashboard):
+#   - Build command:  npm run build
+#   - Deploy command: npx wrangler deploy
+#   - Root directory: (leave blank — the project lives at repo root)
+#
+# Local deploy:
+#   npm install
+#   npm run build
+#   npx wrangler deploy
+
+name = "solitaire-suite"
+compatibility_date = "2025-05-22"
+
+[assets]
+directory = "./dist"
+# Default html_handling ("auto-trailing-slash") already maps
+# /klondike to /klondike/index.html, so SPA-style rewriting is
+# unwanted — broken paths should 404, not silently serve the
+# landing page.
+not_found_handling = "none"

@@ -14,10 +14,10 @@
       {
         "title": "Spider",
         "url": "spider/index.html",
-        "width": 1200,
-        "height": 800,
-        "minWidth": 960,
-        "minHeight": 640,
+        "width": 1280,
+        "height": 920,
+        "minWidth": 1100,
+        "minHeight": 760,
         "resizable": true,
         "fullscreen": false
       }

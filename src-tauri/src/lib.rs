@@ -49,6 +49,11 @@ fn spec_for(product_name: &str) -> GameSpec {
             has_draw_modes: false,
             about_label: "About Pyramid",
         },
+        "Hearts" => GameSpec {
+            has_auto_complete: false,
+            has_draw_modes: false,
+            about_label: "About Hearts",
+        },
         _ => GameSpec {
             has_auto_complete: false,
             has_draw_modes: false,

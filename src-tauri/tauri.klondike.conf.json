@@ -11,10 +11,10 @@
       {
         "title": "Klondike",
         "url": "klondike/index.html",
-        "width": 1024,
-        "height": 850,
-        "minWidth": 800,
-        "minHeight": 600,
+        "width": 1100,
+        "height": 880,
+        "minWidth": 880,
+        "minHeight": 720,
         "resizable": true,
         "fullscreen": false
       }

@@ -18,11 +18,13 @@ export default defineConfig({
     target: "esnext",
     rollupOptions: {
       input: {
+        index: resolve(root, "index.html"),
         klondike: resolve(root, "klondike/index.html"),
         freecell: resolve(root, "freecell/index.html"),
         spider: resolve(root, "spider/index.html"),
         tripeaks: resolve(root, "tripeaks/index.html"),
         pyramid: resolve(root, "pyramid/index.html"),
+        hearts: resolve(root, "hearts/index.html"),
       },
     },
   },

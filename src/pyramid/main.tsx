@@ -14,6 +14,7 @@ import { bind as bindHotkeys } from "../shared/hotkeys";
 import { install as installZoom } from "../shared/zoom";
 import * as Options from "../shared/options";
 import * as Stats from "../shared/stats";
+import { WebMenuBar, standardMenus } from "../shared/WebMenuBar";
 import * as P from "./game";
 
 const GAME_ID = "pyramid";
@@ -365,6 +366,10 @@ function App() {
 
   return (
     <>
+      <WebMenuBar
+        appName="Pyramid"
+        menus={() => standardMenus({ appName: "Pyramid" })}
+      />
       <div id="board" class="pyramid-board" ref={boardRef}>
         <div id="pyramid-area">
           <For each={pyramidCards()}>

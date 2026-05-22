@@ -14,6 +14,7 @@ import { bind as bindHotkeys } from "../shared/hotkeys";
 import { install as installZoom } from "../shared/zoom";
 import * as Options from "../shared/options";
 import * as Stats from "../shared/stats";
+import { WebMenuBar, standardMenus } from "../shared/WebMenuBar";
 import * as T from "./game";
 
 const GAME_ID = "tripeaks";
@@ -317,6 +318,10 @@ function App() {
 
   return (
     <>
+      <WebMenuBar
+        appName="TriPeaks"
+        menus={() => standardMenus({ appName: "TriPeaks" })}
+      />
       <div id="board" class="tripeaks-board" ref={boardRef}>
         <div id="peaks-area">
           <For each={peakCards()}>

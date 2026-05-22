@@ -21,6 +21,7 @@ import { bind as bindHotkeys } from "../shared/hotkeys";
 import { install as installZoom } from "../shared/zoom";
 import * as Options from "../shared/options";
 import * as Stats from "../shared/stats";
+import { WebMenuBar, standardMenus } from "../shared/WebMenuBar";
 import * as H from "./game";
 import * as AI from "./ai";
 
@@ -398,43 +399,91 @@ function App() {
   const w = () => { zoomKey(); return cardW(); };
   const h = () => { zoomKey(); return cardH(); };
 
+  /* ---- Board size tracking ---- */
+
+  let boardRef: HTMLDivElement | undefined;
+  const [boardSize, setBoardSize] = createSignal({ w: 1100, h: 800 });
+  onMount(() => {
+    if (!boardRef) return;
+    const measure = () => setBoardSize({ w: boardRef!.clientWidth, h: boardRef!.clientHeight });
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(boardRef);
+    onCleanup(() => ro.disconnect());
+  });
+
+  /** Width available for the horizontal hands (north + south). The
+   * seat rows span the full grid; only the padding is reserved. */
+  const horizontalSlotWidth = createMemo(() => {
+    zoomKey();
+    return Math.max(w() * 3, boardSize().w - 40);
+  });
+
+  /** Available height for the side vertical fans. */
+  const verticalSlotHeight = createMemo(() => {
+    zoomKey();
+    return Math.max(w() * 2, boardSize().h - 2 * (h() + 26) - 60);
+  });
+
   const passDirText = createMemo(() => DIR_LABELS[state.passDir]);
+
+  /** Fan layout helper: given a count, total slot extent and card
+   * extent, returns the per-card step size (overlap) so cards fan
+   * out centred and never spread further than `maxStep`. */
+  function fanStep(n: number, slot: number, card: number, maxStep: number): number {
+    if (n <= 1) return 0;
+    const ideal = (slot - card) / (n - 1);
+    return Math.max(8, Math.min(maxStep, ideal));
+  }
 
   function HorizontalHand(props: {
     seat: number;
     hand: CardModel[];
     faceUp: boolean;
-    /** Width of the slot in px, used to compute spacing. */
-    maxWidth: number;
+    slotWidth: number;
     selectable: boolean;
     selectedIds: Set<string>;
     legalIds: Set<string> | null;
+    isSouth: boolean;
   }) {
+    const layout = createMemo(() => {
+      const n = props.hand.length;
+      const cw = w();
+      const step = fanStep(n, props.slotWidth, cw, cw * 0.55);
+      const usedW = step * Math.max(0, n - 1) + cw;
+      const startX = Math.max(0, (props.slotWidth - usedW) / 2);
+      return { step, startX, usedW };
+    });
     return (
-      <div class="hand-fan-h" style={`height:${h()}px`}>
+      <div
+        class={`fan-h ${props.isSouth ? "is-south" : "is-north"}`}
+        style={`width:${props.slotWidth}px;`}
+      >
         <For each={props.hand}>
           {(c, i) => {
-            const n = props.hand.length;
-            const cw = w();
-            const span = Math.max(0, props.maxWidth - cw);
-            const step = n > 1 ? Math.min(cw * 0.6, span / (n - 1)) : 0;
-            const startX = (props.maxWidth - (step * (n - 1) + cw)) / 2;
-            const left = startX + step * i();
+            const left = createMemo(() => layout().startX + layout().step * i());
             const cardShown: CardModel = props.faceUp ? c : { ...c, faceUp: false };
             const isLegal = !props.legalIds || props.legalIds.has(c.id);
             const isSelected = props.selectedIds.has(c.id);
             const movable = props.selectable && (props.legalIds ? isLegal : true);
+            const illegal = props.selectable && props.legalIds !== null && !isLegal;
             return (
-              <Card
-                card={cardShown}
-                top="0px"
-                left={`${left}px`}
-                pile="hand"
-                pileIndex={props.seat}
-                cardIndex={i()}
-                movable={movable}
-                selected={isSelected}
-              />
+              <div
+                class="card-wrap"
+                classList={{ illegal }}
+                style={`position:absolute; top:0; left:${left()}px;`}
+              >
+                <Card
+                  card={cardShown}
+                  top="0px"
+                  left="0px"
+                  pile="hand"
+                  pileIndex={props.seat}
+                  cardIndex={i()}
+                  movable={movable}
+                  selected={isSelected}
+                />
+              </div>
             );
           }}
         </For>
@@ -442,35 +491,32 @@ function App() {
     );
   }
 
-  function VerticalHand(props: { seat: number; count: number }) {
+  function VerticalHand(props: { seat: number; count: number; slotHeight: number }) {
+    const layout = createMemo(() => {
+      const n = props.count;
+      const cardThickness = w();      // card-w is the visual height of a landscape card
+      const step = fanStep(n, props.slotHeight, cardThickness, cardThickness * 0.55);
+      const usedH = step * Math.max(0, n - 1) + cardThickness;
+      const startY = Math.max(0, (props.slotHeight - usedH) / 2);
+      return { step, startY };
+    });
     return (
-      <div class="hand-fan-v" style={`width:${h()}px`}>
+      <div
+        class="fan-v"
+        style={`height:${props.slotHeight}px;`}
+      >
         <For each={Array.from({ length: props.count }, (_, i) => i)}>
-          {(i) => {
-            const n = props.count;
-            const slotH = Math.max(h(), w() + (n - 1) * 18);
-            const span = slotH - w();
-            const step = n > 1 ? span / (n - 1) : 0;
-            const top = step * i + w();    // anchor after rotation
-            return (
-              <div
-                class="card face-down"
-                style={`
-                  top:${top}px;
-                  left:${h()}px;
-                  width:${h()}px;
-                  height:${w()}px;
-                  transform: rotate(-90deg);
-                  transform-origin: top left;
-                  position: absolute;
-                `}
-              />
-            );
-          }}
+          {(i) => (
+            <div
+              class="card-back"
+              style={`top:${layout().startY + layout().step * i}px;`}
+            />
+          )}
         </For>
       </div>
     );
   }
+
 
   const southLegal = createMemo(() => state.phase === "play" && state.currentPlayer === 0
     ? legalIds(0)
@@ -479,8 +525,6 @@ function App() {
     new Set((state.pending[0] ?? []).map((c) => c.id)),
   );
 
-  /* Track click on south cards via delegated handler. */
-  let southRef: HTMLDivElement | undefined;
   function onSouthClick(e: MouseEvent) {
     const target = (e.target as Element)?.closest?.(".card") as HTMLElement | null;
     if (!target) return;
@@ -491,48 +535,44 @@ function App() {
     onCardClick(card);
   }
 
-  // Trick view: which card each seat has currently played.
   const trickCards = createMemo(() => state.trick.plays.map((p) => p));
 
-  const southSlotWidth = createMemo(() => {
-    // South hand fits within board width minus left/right gutter.
-    // We can't easily read the board's measured size, so use a
-    // reasonable cap tied to the largest expected card width.
-    return Math.max(13 * 32 + cardW(), 13 * (cardW() * 0.45) + cardW());
-  });
-
-  // Score line for the status bar uses your accumulated total.
   const yourTotal = createMemo(() => state.totals[0]);
 
   return (
     <>
-      <div id="board" class="hearts-board">
+      <WebMenuBar
+        appName="Hearts"
+        menus={() => standardMenus({ appName: "Hearts", hasHint: false })}
+      />
+      <div id="board" class="hearts-board" ref={boardRef}>
         {/* North seat */}
         <div class="seat seat-north">
-          <div class="seat-label" classList={{ "tag-current": state.currentPlayer === 2 && state.phase === "play" }}>
-            North · {state.totals[2]}
-          </div>
           <HorizontalHand
             seat={2}
             hand={state.hands[2]}
             faceUp={false}
-            maxWidth={southSlotWidth()}
+            slotWidth={horizontalSlotWidth()}
             selectable={false}
             selectedIds={new Set()}
             legalIds={null}
+            isSouth={false}
           />
+          <div class="seat-label" classList={{ "tag-current": state.currentPlayer === 2 && state.phase === "play" }}>
+            North · {state.totals[2]}
+          </div>
         </div>
 
         {/* West seat */}
         <div class="seat seat-west">
+          <VerticalHand seat={1} count={state.hands[1].length} slotHeight={verticalSlotHeight()} />
           <div class="seat-label" classList={{ "tag-current": state.currentPlayer === 1 && state.phase === "play" }}>
             West · {state.totals[1]}
           </div>
-          <VerticalHand seat={1} count={state.hands[1].length} />
         </div>
 
         {/* Center trick area */}
-        <div class="seat seat-trick">
+        <div class="seat seat-mid">
           <Show when={state.phase === "pass"}>
             <div id="pass-banner">
               Pass {DIR_LABELS[state.passDir]} — pick 3 cards
@@ -569,7 +609,7 @@ function App() {
                 );
               }}
             </For>
-            <Show when={state.phase === "play"}>
+            <Show when={state.phase === "play" && !H.isTrickPendingClear(state)}>
               <div class={`arrow dir-${["S","W","N","E"][state.currentPlayer]}`}>▲</div>
             </Show>
           </div>
@@ -577,25 +617,26 @@ function App() {
 
         {/* East seat */}
         <div class="seat seat-east">
+          <VerticalHand seat={3} count={state.hands[3].length} slotHeight={verticalSlotHeight()} />
           <div class="seat-label" classList={{ "tag-current": state.currentPlayer === 3 && state.phase === "play" }}>
             East · {state.totals[3]}
           </div>
-          <VerticalHand seat={3} count={state.hands[3].length} />
         </div>
 
         {/* South seat */}
-        <div class="seat seat-south" ref={southRef} onClick={onSouthClick}>
+        <div class="seat seat-south" onClick={onSouthClick}>
           <HorizontalHand
             seat={0}
             hand={state.hands[0]}
             faceUp={true}
-            maxWidth={southSlotWidth()}
+            slotWidth={horizontalSlotWidth()}
             selectable={
               state.phase === "pass" ||
               (state.phase === "play" && state.currentPlayer === 0)
             }
             selectedIds={selectedIds()}
             legalIds={southLegal()}
+            isSouth={true}
           />
           <div class="seat-label" classList={{ "tag-current": state.currentPlayer === 0 && state.phase === "play" }}>
             You · {state.totals[0]} · pass {passDirText()}

@@ -17,6 +17,7 @@ import { bind as bindHotkeys } from "../shared/hotkeys";
 import { install as installZoom } from "../shared/zoom";
 import * as Options from "../shared/options";
 import * as Stats from "../shared/stats";
+import { WebMenuBar, standardMenus } from "../shared/WebMenuBar";
 import * as S from "./game";
 
 const GAME_ID = "spider";
@@ -278,6 +279,10 @@ function App() {
 
   return (
     <>
+      <WebMenuBar
+        appName="Spider"
+        menus={() => standardMenus({ appName: "Spider" })}
+      />
       <div id="board" class="spider-board" ref={boardRef}>
         <div id="tableau-row">
           <For each={[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}>

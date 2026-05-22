@@ -17,6 +17,7 @@ import { bind as bindHotkeys } from "../shared/hotkeys";
 import { install as installZoom } from "../shared/zoom";
 import * as Options from "../shared/options";
 import * as Stats from "../shared/stats";
+import { WebMenuBar, standardMenus } from "../shared/WebMenuBar";
 import * as K from "./game";
 import { findSolvableState } from "./solver";
 
@@ -396,6 +397,16 @@ function App() {
 
   return (
     <>
+      <WebMenuBar
+        appName="Klondike"
+        menus={() => standardMenus({
+          appName: "Klondike",
+          hasAutoComplete: true,
+          autoComplete: autoComplete(),
+          hasDrawModes: true,
+          drawMode: drawMode(),
+        })}
+      />
       <div id="board" class="klondike-board" ref={boardRef}>
         <div id="top-row">
           {/* Stock */}

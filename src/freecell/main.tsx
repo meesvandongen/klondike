@@ -17,6 +17,7 @@ import { bind as bindHotkeys } from "../shared/hotkeys";
 import { install as installZoom } from "../shared/zoom";
 import * as Options from "../shared/options";
 import * as Stats from "../shared/stats";
+import { WebMenuBar, standardMenus } from "../shared/WebMenuBar";
 import * as F from "./game";
 
 const GAME_ID = "freecell";
@@ -338,6 +339,14 @@ function App() {
 
   return (
     <>
+      <WebMenuBar
+        appName="FreeCell"
+        menus={() => standardMenus({
+          appName: "FreeCell",
+          hasAutoComplete: true,
+          autoComplete: autoComplete(),
+        })}
+      />
       <div id="board" class="freecell-board" ref={boardRef}>
         <div id="top-row">
           {/* Cells */}

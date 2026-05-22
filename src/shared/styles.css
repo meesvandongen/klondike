@@ -296,6 +296,106 @@ html, body {
 }
 #drag-layer .card { pointer-events: none; }
 
+/* ---------- Web menu bar ----------
+ *
+ * Rendered by <WebMenuBar/> only when running in a browser (i.e.
+ * outside Tauri). When present, html[data-web-menu="1"] is set and
+ * the board is shifted down to make room.
+ */
+
+#web-menu-bar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 28px;
+  display: flex;
+  align-items: stretch;
+  background: linear-gradient(to bottom, #efefef 0%, #d2d2d2 100%);
+  border-bottom: 1px solid #888;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset;
+  z-index: 500;
+  color: #111;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  font-size: 12px;
+  user-select: none;
+}
+
+#web-menu-bar .menu-brand {
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  font-weight: 700;
+  color: #222;
+  text-decoration: none;
+  letter-spacing: 0.3px;
+  border-right: 1px solid rgba(0, 0, 0, 0.15);
+}
+#web-menu-bar .menu-brand:hover { color: #29569a; }
+
+#web-menu-bar .menu-col {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+}
+
+#web-menu-bar .menu-col-btn {
+  background: transparent;
+  border: 0;
+  padding: 0 12px;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+#web-menu-bar .menu-col.open > .menu-col-btn,
+#web-menu-bar .menu-col-btn:hover {
+  background: linear-gradient(to bottom, #d2e6fb 0%, #a8d0f4 100%);
+  color: #102f5b;
+}
+
+#web-menu-bar .menu-dropdown {
+  position: absolute;
+  top: 28px;
+  left: 0;
+  min-width: 220px;
+  background: #f4f4f4;
+  border: 1px solid #5a5a5a;
+  border-top: 0;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  padding: 4px 0;
+  z-index: 501;
+}
+
+#web-menu-bar .menu-item {
+  display: grid;
+  grid-template-columns: 20px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 12px;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+#web-menu-bar .menu-item:hover:not(:disabled) {
+  background: linear-gradient(to bottom, #d2e6fb 0%, #a8d0f4 100%);
+  color: #102f5b;
+}
+#web-menu-bar .menu-item:disabled { opacity: 0.45; cursor: default; }
+#web-menu-bar .menu-check { font-weight: 700; }
+#web-menu-bar .menu-shortcut { color: #555; padding-left: 16px; font-size: 11px; }
+#web-menu-bar .menu-sep {
+  height: 1px;
+  background: #c5c5c5;
+  margin: 4px 8px;
+}
+
+/* When the menu is present, push everything else down. */
+html[data-web-menu="1"] body { padding-top: 28px; box-sizing: border-box; }
+
 /* ---------- Status bar ---------- */
 
 #status-bar {

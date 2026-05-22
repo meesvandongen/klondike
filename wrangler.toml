@@ -16,7 +16,7 @@
 #   npm run build
 #   npx wrangler deploy
 
-name = "solitaire-suite"
+name = "solitaire"
 compatibility_date = "2025-05-22"
 
 [assets]

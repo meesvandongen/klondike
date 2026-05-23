@@ -35,6 +35,23 @@ function apply(level: number): number {
   return z;
 }
 
+/**
+ * Apply zoom-derived CSS variables to <html> synchronously, before any
+ * Solid render. On Safari/WebKit (incl. Tauri's WKWebView on macOS) the
+ * module script can run before the linked stylesheet has finished
+ * parsing, so a render-time `getComputedStyle().getPropertyValue("--…")`
+ * returns "" and reactive memos resolve fan offsets to 0 — making all
+ * cards stack at the same position. Setting the variables as inline
+ * styles on documentElement bypasses the stylesheet entirely, so
+ * cssVarPx reads correct values from the first render onward.
+ *
+ * Call this in each game's main.tsx at module top level (after loading
+ * persisted options, before `render(...)`).
+ */
+export function applyInitial(level: number): number {
+  return apply(level);
+}
+
 export interface ZoomController {
   get: () => number;
   set: (next: number) => void;

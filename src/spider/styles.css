@@ -13,9 +13,11 @@
 .spider-board #tableau-row {
   display: grid;
   grid-template-columns: repeat(10, var(--card-w));
+  grid-template-rows: minmax(0, 1fr);
   gap: 14px;
   justify-content: center;
   flex: 1;
+  min-height: 0;
   position: relative;
 }
 

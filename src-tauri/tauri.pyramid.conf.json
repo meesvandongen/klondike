@@ -45,6 +45,6 @@
         "displayLanguageSelector": false
       }
     },
-    "macOS": { "minimumSystemVersion": "10.13" }
+    "macOS": { "minimumSystemVersion": "11.0" }
   }
 }

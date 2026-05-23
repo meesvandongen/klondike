@@ -20,8 +20,14 @@
 .klondike-board #tableau-row {
   display: grid;
   grid-template-columns: repeat(7, var(--card-w));
+  /* Explicit 1fr row so `.pile-slot.tall { height: 100% }` resolves to
+   * the full available vertical space. WebKit (Safari, Tauri's WKWebView)
+   * leaves implicit auto rows undefined, collapsing percentage heights
+   * to 0; Chromium tolerated it but macOS does not. */
+  grid-template-rows: minmax(0, 1fr);
   gap: var(--pile-gap);
   justify-content: center;
   flex: 1;
+  min-height: 0;
   position: relative;
 }

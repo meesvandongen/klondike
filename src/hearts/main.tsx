@@ -18,7 +18,7 @@ import { useNow } from "../shared/timer";
 import { formatTime, cssVarPx } from "../shared/utils";
 import { registerMany, wire as wireMenu } from "../shared/menu";
 import { bind as bindHotkeys } from "../shared/hotkeys";
-import { install as installZoom } from "../shared/zoom";
+import { applyInitial as applyInitialZoom, install as installZoom } from "../shared/zoom";
 import * as Options from "../shared/options";
 import * as Stats from "../shared/stats";
 import { WebMenuBar, standardMenus } from "../shared/WebMenuBar";
@@ -36,6 +36,7 @@ const OPTION_DEFAULTS: AppOpts = { zoom: 1, targetScore: 100 };
 
 function App() {
   const opts = Options.load<AppOpts>(GAME_ID, OPTION_DEFAULTS);
+  applyInitialZoom(opts.zoom);
   const [state, setState] = createStore<H.HeartsState>(
     H.newState({ targetScore: opts.targetScore }),
   );
@@ -405,7 +406,14 @@ function App() {
   const [boardSize, setBoardSize] = createSignal({ w: 1100, h: 800 });
   onMount(() => {
     if (!boardRef) return;
-    const measure = () => setBoardSize({ w: boardRef!.clientWidth, h: boardRef!.clientHeight });
+    const measure = () => {
+      const w = boardRef!.clientWidth;
+      const h = boardRef!.clientHeight;
+      // On Safari/WebKit a freshly-mounted element may report 0 if
+      // layout hasn't flushed; ignore the bogus reading rather than
+      // collapsing every fan onto a single point.
+      if (w > 0 && h > 0) setBoardSize({ w, h });
+    };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(boardRef);

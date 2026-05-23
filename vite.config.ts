@@ -15,7 +15,7 @@ export default defineConfig({
   build: {
     outDir: resolve(__dirname, "dist"),
     emptyOutDir: true,
-    target: "esnext",
+    target: ["es2022", "safari16", "chrome108", "firefox110"],
     rollupOptions: {
       input: {
         index: resolve(root, "index.html"),

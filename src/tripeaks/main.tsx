@@ -11,7 +11,7 @@ import { useNow } from "../shared/timer";
 import { formatTime, cssVarPx } from "../shared/utils";
 import { registerMany, wire as wireMenu } from "../shared/menu";
 import { bind as bindHotkeys } from "../shared/hotkeys";
-import { install as installZoom } from "../shared/zoom";
+import { applyInitial as applyInitialZoom, install as installZoom } from "../shared/zoom";
 import * as Options from "../shared/options";
 import * as Stats from "../shared/stats";
 import { WebMenuBar, standardMenus } from "../shared/WebMenuBar";
@@ -23,6 +23,7 @@ const OPTION_DEFAULTS: AppOpts = { zoom: 1 };
 
 function App() {
   const opts = Options.load<AppOpts>(GAME_ID, OPTION_DEFAULTS);
+  applyInitialZoom(opts.zoom);
   const [state, setState] = createStore<T.TriPeaksState>(T.newState());
   const now = useNow();
 

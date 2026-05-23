@@ -31,8 +31,10 @@
 .freecell-board #tableau-row {
   display: grid;
   grid-template-columns: repeat(8, var(--card-w));
+  grid-template-rows: minmax(0, 1fr);
   gap: var(--pile-gap);
   justify-content: center;
   flex: 1;
+  min-height: 0;
   position: relative;
 }

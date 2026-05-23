@@ -114,11 +114,18 @@ export function WebMenuBar(props: { menus: () => MenuColumn[]; appName: string }
     if (target?.closest("#web-menu-bar")) return;
     setOpen(null);
   }
+  // Only attach web-only behavior when actually running in a browser.
+  // Inside Tauri the native menu replaces the web menu, and applying the
+  // `data-web-menu` attribute would push the board down by 28px under
+  // an invisible menu bar.
+  const web = isWeb();
   onMount(() => {
+    if (!web) return;
     document.addEventListener("mousedown", closeOnOutside);
     document.documentElement.dataset.webMenu = "1";
   });
   onCleanup(() => {
+    if (!web) return;
     document.removeEventListener("mousedown", closeOnOutside);
     delete document.documentElement.dataset.webMenu;
   });

@@ -1,14 +1,17 @@
-/* ---------- Spider (1-suit) engine ----------
+/* ---------- Spider engine ----------
  *
- * 104 cards = 8 decks of 13 spades.
+ * 104 cards arranged in 8 decks. The deck composition depends on the
+ * `suits` setting (1, 2 or 4) — the total card count is always 104.
  * 10 tableau columns: cols 0-3 get 6 cards, cols 4-9 get 5 cards (54 cards).
  * Stock: 50 cards, dealt 10 at a time, one per column.
  * Completed K-down-to-A in-suit sequences are removed to the "completed" pile.
  * No foundations; win = 8 completed sequences.
  */
-import type { Card, MoveSource, MoveDest } from "../shared/types";
+import type { Card, MoveSource, MoveDest, Suit } from "../shared/types";
 import { rankValue, makeDeck as baseMakeDeck } from "../shared/deck";
 import { shuffle } from "../shared/utils";
+
+export type SpiderSuits = 1 | 2 | 4;
 
 export interface SpiderState {
   tableau: Card[][];
@@ -19,6 +22,7 @@ export interface SpiderState {
   startedAt: number;
   finishedAt: number | null;
   history: Snapshot[];
+  suits: SpiderSuits;
 }
 
 interface Snapshot {
@@ -34,12 +38,22 @@ export interface HintMove {
   dst: MoveDest;
 }
 
-function makeDeck(): Card[] {
-  return baseMakeDeck({ numDecks: 8, suits: ["S"] });
+function makeDeck(suits: SpiderSuits): Card[] {
+  // Always 104 cards total: numDecks * suitsUsed * 13 = 104.
+  // suits=1 → 8 decks of 1 suit; suits=2 → 4 decks of 2; suits=4 → 2 decks of 4.
+  if (suits === 1) {
+    return baseMakeDeck({ numDecks: 8, suits: ["S"] });
+  }
+  if (suits === 2) {
+    return baseMakeDeck({ numDecks: 4, suits: ["S", "H"] });
+  }
+  const allSuits: Suit[] = ["S", "H", "D", "C"];
+  return baseMakeDeck({ numDecks: 2, suits: allSuits });
 }
 
-export function newState(): SpiderState {
-  const deck = shuffle(makeDeck());
+export function newState(opts: { suits?: SpiderSuits } = {}): SpiderState {
+  const suits = opts.suits ?? 1;
+  const deck = shuffle(makeDeck(suits));
   const tableau: Card[][] = [[], [], [], [], [], [], [], [], [], []];
   let idx = 0;
   for (let col = 0; col < 10; col++) {
@@ -62,6 +76,7 @@ export function newState(): SpiderState {
     startedAt: Date.now(),
     finishedAt: null,
     history: [],
+    suits,
   };
 }
 

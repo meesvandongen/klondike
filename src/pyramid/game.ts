@@ -11,6 +11,7 @@ import { shuffle } from "../shared/utils";
 
 export const ROWS = 7;
 export const TOTAL = 28;
+/** Default stock recycles (Easy difficulty). */
 export const MAX_CYCLES = 3;
 
 export interface PyramidCard extends Card {
@@ -27,6 +28,8 @@ export interface PyramidState {
   stock: Card[];
   waste: Card[];
   cycles: number;
+  /** Max stock recycles allowed for this game (0..3). */
+  maxCycles: number;
   score: number;
   moves: number;
   startedAt: number;
@@ -62,7 +65,8 @@ export function rankPoint(rank: Rank): number {
   return rankValue(rank);
 }
 
-export function newState(): PyramidState {
+export function newState(opts: { maxCycles?: number } = {}): PyramidState {
+  const maxCycles = Math.max(0, Math.min(3, opts.maxCycles ?? MAX_CYCLES));
   const deck = shuffle(baseMakeDeck());
   const pyramid: PyramidCard[] = [];
   for (let i = 0; i < TOTAL; i++) {
@@ -74,6 +78,7 @@ export function newState(): PyramidState {
     stock,
     waste: [],
     cycles: 0,
+    maxCycles,
     score: 0,
     moves: 0,
     startedAt: Date.now(),
@@ -184,7 +189,7 @@ export function removePair(
 
 export function dealFromStock(state: PyramidState): boolean {
   if (state.stock.length === 0) {
-    if (state.cycles >= MAX_CYCLES) return false;
+    if (state.cycles >= state.maxCycles) return false;
     pushHistory(state);
     while (state.waste.length) {
       const c = state.waste.pop()!;
@@ -235,7 +240,7 @@ export function noMovesLeft(state: PyramidState): boolean {
     }
   }
   if (state.stock.length > 0) return false;
-  if (state.cycles < MAX_CYCLES) return false;
+  if (state.cycles < state.maxCycles) return false;
   return true;
 }
 

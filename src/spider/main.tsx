@@ -18,20 +18,31 @@ import { applyInitial as applyInitialZoom, install as installZoom } from "../sha
 import * as Options from "../shared/options";
 import * as Stats from "../shared/stats";
 import { WebMenuBar, standardMenus } from "../shared/WebMenuBar";
+import { coerce as coerceDifficulty, type Difficulty } from "../shared/difficulty";
 import * as S from "./game";
 
 const GAME_ID = "spider";
-interface AppOpts { zoom: number }
-const OPTION_DEFAULTS: AppOpts = { zoom: 1 };
+interface AppOpts { zoom: number; difficulty: Difficulty }
+const OPTION_DEFAULTS: AppOpts = { zoom: 1, difficulty: "easy" };
+
+function suitsForDifficulty(d: Difficulty): S.SpiderSuits {
+  if (d === "easy") return 1;
+  if (d === "medium") return 2;
+  return 4;
+}
 
 function App() {
   const opts = Options.load<AppOpts>(GAME_ID, OPTION_DEFAULTS);
+  opts.difficulty = coerceDifficulty(opts.difficulty, "easy");
   applyInitialZoom(opts.zoom);
-  const [state, setState] = createStore<S.SpiderState>(S.newState());
+  const [difficulty, setDifficulty] = createSignal<Difficulty>(opts.difficulty);
+  const [state, setState] = createStore<S.SpiderState>(
+    S.newState({ suits: suitsForDifficulty(difficulty()) }),
+  );
   const now = useNow();
 
   function persistOptions() {
-    Options.save<AppOpts>(GAME_ID, { zoom: opts.zoom });
+    Options.save<AppOpts>(GAME_ID, { zoom: opts.zoom, difficulty: difficulty() });
   }
 
   /* ---- Actions ---- */
@@ -107,7 +118,7 @@ function App() {
     if (state.moves > 0 && !state.finishedAt) {
       Stats.record(GAME_ID, { won: false });
     }
-    setState(S.newState());
+    setState(S.newState({ suits: suitsForDifficulty(difficulty()) }));
   }
 
   /* ---- Drag pickup ---- */
@@ -176,19 +187,58 @@ function App() {
   }
 
   function openOptions() {
+    let diffSel: Difficulty = difficulty();
     modalShow({
       title: "Options",
-      body: <p style="margin:0;">Spider is running in 1-suit mode (Spades only). Future versions will offer 2- and 4-suit difficulty.</p>,
-      buttons: [{ label: "OK", primary: true, onClick: modalClose }],
+      body: (
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <span>Difficulty:</span>
+            <label>
+              <input type="radio" name="diff" value="easy"
+                     checked={diffSel === "easy"}
+                     onChange={() => { diffSel = "easy"; }} />
+              Easy — 1 suit (Spades only)
+            </label>
+            <label>
+              <input type="radio" name="diff" value="medium"
+                     checked={diffSel === "medium"}
+                     onChange={() => { diffSel = "medium"; }} />
+              Medium — 2 suits (Spades + Hearts)
+            </label>
+            <label>
+              <input type="radio" name="diff" value="hard"
+                     checked={diffSel === "hard"}
+                     onChange={() => { diffSel = "hard"; }} />
+              Hard — 4 suits
+            </label>
+          </div>
+        </div>
+      ),
+      buttons: [
+        {
+          label: "OK", primary: true,
+          onClick: () => {
+            modalClose();
+            if (diffSel !== difficulty()) {
+              setDifficulty(diffSel);
+              persistOptions();
+              newGame();
+            }
+          },
+        },
+        { label: "Cancel", onClick: modalClose },
+      ],
     });
   }
 
   function showAbout() {
+    const suitsLabel = state.suits === 1 ? "1-suit" : state.suits === 2 ? "2-suit" : "4-suit";
     modalShow({
       title: "About Spider",
       body: (
         <>
-          <p style="margin:0 0 6px 0;"><strong>Spider</strong> (1-suit)</p>
+          <p style="margin:0 0 6px 0;"><strong>Spider</strong> ({suitsLabel})</p>
           <p style="margin:0 0 10px 0;">Version 1.0.0</p>
           <p style="margin:0;">Build eight K-to-A sequences to clear the board.</p>
         </>

@@ -15,11 +15,18 @@ import { applyInitial as applyInitialZoom, install as installZoom } from "../sha
 import * as Options from "../shared/options";
 import * as Stats from "../shared/stats";
 import { WebMenuBar, standardMenus } from "../shared/WebMenuBar";
+import { coerce as coerceDifficulty, type Difficulty } from "../shared/difficulty";
 import * as P from "./game";
 
 const GAME_ID = "pyramid";
-interface AppOpts { zoom: number }
-const OPTION_DEFAULTS: AppOpts = { zoom: 1 };
+interface AppOpts { zoom: number; difficulty: Difficulty }
+const OPTION_DEFAULTS: AppOpts = { zoom: 1, difficulty: "easy" };
+
+function cyclesForDifficulty(d: Difficulty): number {
+  if (d === "easy") return 3;
+  if (d === "medium") return 1;
+  return 0;
+}
 
 function refKey(r: P.PyramidRef): string {
   return `${r.pile}#${r.index}`;
@@ -27,13 +34,17 @@ function refKey(r: P.PyramidRef): string {
 
 function App() {
   const opts = Options.load<AppOpts>(GAME_ID, OPTION_DEFAULTS);
+  opts.difficulty = coerceDifficulty(opts.difficulty, "easy");
   applyInitialZoom(opts.zoom);
-  const [state, setState] = createStore<P.PyramidState>(P.newState());
+  const [difficulty, setDifficulty] = createSignal<Difficulty>(opts.difficulty);
+  const [state, setState] = createStore<P.PyramidState>(
+    P.newState({ maxCycles: cyclesForDifficulty(difficulty()) }),
+  );
   const [selected, setSelected] = createSignal<P.PyramidRef | null>(null);
   const now = useNow();
 
   function persistOptions() {
-    Options.save<AppOpts>(GAME_ID, { zoom: opts.zoom });
+    Options.save<AppOpts>(GAME_ID, { zoom: opts.zoom, difficulty: difficulty() });
   }
 
   /* ---- Actions ---- */
@@ -142,7 +153,7 @@ function App() {
     if (state.moves > 0 && !state.finishedAt) {
       Stats.record(GAME_ID, { won: false, score: state.score });
     }
-    setState(P.newState());
+    setState(P.newState({ maxCycles: cyclesForDifficulty(difficulty()) }));
     setSelected(null);
   }
 
@@ -230,10 +241,48 @@ function App() {
   }
 
   function openOptions() {
+    let diffSel: Difficulty = difficulty();
     modalShow({
       title: "Options",
-      body: <p style="margin:0;">Stock recycles allowed: <strong>{P.MAX_CYCLES}</strong>.</p>,
-      buttons: [{ label: "OK", primary: true, onClick: modalClose }],
+      body: (
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <span>Difficulty:</span>
+            <label>
+              <input type="radio" name="diff" value="easy"
+                     checked={diffSel === "easy"}
+                     onChange={() => { diffSel = "easy"; }} />
+              Easy — 3 stock recycles
+            </label>
+            <label>
+              <input type="radio" name="diff" value="medium"
+                     checked={diffSel === "medium"}
+                     onChange={() => { diffSel = "medium"; }} />
+              Medium — 1 stock recycle
+            </label>
+            <label>
+              <input type="radio" name="diff" value="hard"
+                     checked={diffSel === "hard"}
+                     onChange={() => { diffSel = "hard"; }} />
+              Hard — single pass through stock
+            </label>
+          </div>
+        </div>
+      ),
+      buttons: [
+        {
+          label: "OK", primary: true,
+          onClick: () => {
+            modalClose();
+            if (diffSel !== difficulty()) {
+              setDifficulty(diffSel);
+              persistOptions();
+              newGame();
+            }
+          },
+        },
+        { label: "Cancel", onClick: modalClose },
+      ],
     });
   }
 
@@ -259,7 +308,7 @@ function App() {
           <p style="margin:0 0 8px 0;">Pair two available cards whose ranks sum to 13 to remove them.</p>
           <p style="margin:0 0 8px 0;">A = 1, J = 11, Q = 12, K = 13 (Kings remove alone).</p>
           <p style="margin:0 0 8px 0;">A pyramid card is available once both cards covering it from below have been removed.</p>
-          <p style="margin:0;">The stock deals one card to the waste; the waste top can also be paired. {P.MAX_CYCLES} stock cycles are allowed.</p>
+          <p style="margin:0;">The stock deals one card to the waste; the waste top can also be paired. {state.maxCycles} stock {state.maxCycles === 1 ? "recycle is" : "recycles are"} allowed.</p>
         </>
       ),
       buttons: [{ label: "OK", primary: true, onClick: modalClose }],

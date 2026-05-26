@@ -18,17 +18,28 @@ import { applyInitial as applyInitialZoom, install as installZoom } from "../sha
 import * as Options from "../shared/options";
 import * as Stats from "../shared/stats";
 import { WebMenuBar, standardMenus } from "../shared/WebMenuBar";
+import { coerce as coerceDifficulty, type Difficulty } from "../shared/difficulty";
 import * as F from "./game";
 
 const GAME_ID = "freecell";
-interface AppOpts { autoComplete: boolean; zoom: number }
-const OPTION_DEFAULTS: AppOpts = { autoComplete: true, zoom: 1 };
+interface AppOpts { autoComplete: boolean; zoom: number; difficulty: Difficulty }
+const OPTION_DEFAULTS: AppOpts = { autoComplete: true, zoom: 1, difficulty: "easy" };
+
+function cellsForDifficulty(d: Difficulty): number {
+  if (d === "easy") return 4;
+  if (d === "medium") return 2;
+  return 1;
+}
 
 function App() {
   const opts = Options.load<AppOpts>(GAME_ID, OPTION_DEFAULTS);
+  opts.difficulty = coerceDifficulty(opts.difficulty, "easy");
   applyInitialZoom(opts.zoom);
   const [autoComplete, setAutoComplete] = createSignal(opts.autoComplete);
-  const [state, setState] = createStore<F.FreeCellState>(F.newState());
+  const [difficulty, setDifficulty] = createSignal<Difficulty>(opts.difficulty);
+  const [state, setState] = createStore<F.FreeCellState>(
+    F.newState({ numCells: cellsForDifficulty(difficulty()) }),
+  );
   const now = useNow();
   let autoPlayActive = false;
 
@@ -36,6 +47,7 @@ function App() {
     Options.save<AppOpts>(GAME_ID, {
       autoComplete: autoComplete(),
       zoom: opts.zoom,
+      difficulty: difficulty(),
     });
   }
 
@@ -153,7 +165,7 @@ function App() {
     if (state.moves > 0 && !state.finishedAt) {
       Stats.record(GAME_ID, { won: false });
     }
-    setState(F.newState());
+    setState(F.newState({ numCells: cellsForDifficulty(difficulty()) }));
   }
 
   /* ---- Drag pickup ---- */
@@ -218,16 +230,40 @@ function App() {
 
   function openOptions() {
     let autoSel = autoComplete();
+    let diffSel: Difficulty = difficulty();
     modalShow({
       title: "Options",
       body: (
-        <div style="display:flex; flex-direction:column; gap:8px;">
-          <label>
-            <input type="checkbox" id="opt-autocomplete"
-                   checked={autoSel}
-                   onChange={(e) => { autoSel = (e.target as HTMLInputElement).checked; }} />
-            Auto-play cards to foundation
-          </label>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <span>Difficulty:</span>
+            <label>
+              <input type="radio" name="diff" value="easy"
+                     checked={diffSel === "easy"}
+                     onChange={() => { diffSel = "easy"; }} />
+              Easy — 4 free cells
+            </label>
+            <label>
+              <input type="radio" name="diff" value="medium"
+                     checked={diffSel === "medium"}
+                     onChange={() => { diffSel = "medium"; }} />
+              Medium — 2 free cells
+            </label>
+            <label>
+              <input type="radio" name="diff" value="hard"
+                     checked={diffSel === "hard"}
+                     onChange={() => { diffSel = "hard"; }} />
+              Hard — 1 free cell
+            </label>
+          </div>
+          <div style="padding-top:10px; border-top:1px solid #c5c5c5;">
+            <label>
+              <input type="checkbox" id="opt-autocomplete"
+                     checked={autoSel}
+                     onChange={(e) => { autoSel = (e.target as HTMLInputElement).checked; }} />
+              Auto-play cards to foundation
+            </label>
+          </div>
         </div>
       ),
       buttons: [
@@ -236,6 +272,11 @@ function App() {
           onClick: () => {
             modalClose();
             if (autoSel !== autoComplete()) setAutoCompleteOpt(autoSel, true);
+            if (diffSel !== difficulty()) {
+              setDifficulty(diffSel);
+              persistOptions();
+              newGame();
+            }
           },
         },
         { label: "Cancel", onClick: modalClose },
@@ -351,7 +392,7 @@ function App() {
       <div id="board" class="freecell-board" ref={boardRef}>
         <div id="top-row">
           {/* Cells */}
-          <For each={[0, 1, 2, 3]}>
+          <For each={Array.from({ length: state.cells.length }, (_, i) => i)}>
             {(i) => (
               <div
                 class="pile-slot cell"

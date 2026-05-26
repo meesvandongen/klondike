@@ -18,6 +18,8 @@ export interface FreeCellState {
   startedAt: number;
   finishedAt: number | null;
   history: Snapshot[];
+  /** Number of free cells (1-4). Lower = harder. */
+  numCells: number;
 }
 
 interface Snapshot {
@@ -37,7 +39,8 @@ function makeDeck(): Card[] {
   return baseMakeDeck().map((c) => ({ ...c, faceUp: true }));
 }
 
-export function newState(): FreeCellState {
+export function newState(opts: { numCells?: number } = {}): FreeCellState {
+  const numCells = Math.max(1, Math.min(4, opts.numCells ?? 4));
   const deck = shuffle(makeDeck());
   const tableau: Card[][] = [[], [], [], [], [], [], [], []];
   // 4 cols of 7, 4 cols of 6 = 52
@@ -48,13 +51,14 @@ export function newState(): FreeCellState {
   }
   return {
     tableau,
-    cells: [null, null, null, null],
+    cells: Array(numCells).fill(null),
     foundations: [[], [], [], []],
     score: 0,
     moves: 0,
     startedAt: Date.now(),
     finishedAt: null,
     history: [],
+    numCells,
   };
 }
 
@@ -254,7 +258,7 @@ export function autoMove(state: FreeCellState, src: MoveSource): boolean {
   }
   // Finally, single card to free cell.
   if (sliceLen === 1 && src.pile !== "cell") {
-    for (let c = 0; c < 4; c++) {
+    for (let c = 0; c < state.cells.length; c++) {
       if (state.cells[c] === null) {
         return move(state, { ...src, cardIndex: startIdx }, { pile: "cell", index: c });
       }
@@ -274,7 +278,7 @@ export function autoCompleteStep(state: FreeCellState): boolean {
     const p = state.tableau[i];
     if (p.length) tops.push({ card: p[p.length - 1], src: { pile: "tableau", index: i, cardIndex: p.length - 1 } });
   }
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < state.cells.length; i++) {
     const c = state.cells[i];
     if (c) tops.push({ card: c, src: { pile: "cell", index: i, cardIndex: 0 } });
   }
@@ -316,7 +320,7 @@ export function safeAutoStep(state: FreeCellState): boolean {
       candidates.push({ card: p[p.length - 1], src: { pile: "tableau", index: i, cardIndex: p.length - 1 } });
     }
   }
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < state.cells.length; i++) {
     const c = state.cells[i];
     if (c) {
       candidates.push({ card: c, src: { pile: "cell", index: i, cardIndex: 0 } });
@@ -342,7 +346,7 @@ export function hint(state: FreeCellState): HintMove | null {
     const p = state.tableau[i];
     if (p.length) tops.push({ card: p[p.length - 1], src: { pile: "tableau", index: i, cardIndex: p.length - 1 } });
   }
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < state.cells.length; i++) {
     const c = state.cells[i];
     if (c) tops.push({ card: c, src: { pile: "cell", index: i, cardIndex: 0 } });
   }
@@ -368,7 +372,7 @@ export function hint(state: FreeCellState): HintMove | null {
     }
   }
   // 3. Cell -> tableau
-  for (let c = 0; c < 4; c++) {
+  for (let c = 0; c < state.cells.length; c++) {
     const card = state.cells[c];
     if (!card) continue;
     for (let j = 0; j < 8; j++) {

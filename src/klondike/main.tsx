@@ -18,18 +18,21 @@ import { applyInitial as applyInitialZoom, install as installZoom } from "../sha
 import * as Options from "../shared/options";
 import * as Stats from "../shared/stats";
 import { WebMenuBar, standardMenus } from "../shared/WebMenuBar";
+import { coerce as coerceDifficulty, type Difficulty } from "../shared/difficulty";
 import * as K from "./game";
 import { findSolvableState } from "./solver";
 
 const GAME_ID = "klondike";
-interface AppOpts { drawMode: number; autoComplete: boolean; zoom: number }
-const OPTION_DEFAULTS: AppOpts = { drawMode: 1, autoComplete: true, zoom: 1 };
+interface AppOpts { drawMode: number; autoComplete: boolean; zoom: number; difficulty: Difficulty }
+const OPTION_DEFAULTS: AppOpts = { drawMode: 1, autoComplete: true, zoom: 1, difficulty: "easy" };
 
 function App() {
   const opts = Options.load<AppOpts>(GAME_ID, OPTION_DEFAULTS);
+  opts.difficulty = coerceDifficulty(opts.difficulty, "easy");
   applyInitialZoom(opts.zoom);
   const [drawMode, setDrawMode] = createSignal(opts.drawMode);
   const [autoComplete, setAutoComplete] = createSignal(opts.autoComplete);
+  const [difficulty, setDifficulty] = createSignal<Difficulty>(opts.difficulty);
   const [state, setState] = createStore<K.KlondikeState>(K.newState({ draw: drawMode() }));
   const [dealing, setDealing] = createSignal(false);
   const now = useNow();
@@ -40,6 +43,7 @@ function App() {
       drawMode: drawMode(),
       autoComplete: autoComplete(),
       zoom: opts.zoom,
+      difficulty: difficulty(),
     });
   }
 
@@ -160,10 +164,19 @@ function App() {
       Stats.record(GAME_ID, { won: false });
     }
     setDealing(true);
-    overlayShow("Dealing a winnable game…");
-    await new Promise((r) => setTimeout(r, 30));
-    const result = findSolvableState({ draw: drawMode() });
-    setState(result.state);
+    const d = difficulty();
+    if (d === "hard") {
+      overlayShow("Dealing…");
+      await new Promise((r) => setTimeout(r, 30));
+      setState(K.newState({ draw: drawMode() }));
+    } else {
+      overlayShow(d === "easy" ? "Dealing a winnable game…" : "Dealing…");
+      await new Promise((r) => setTimeout(r, 30));
+      const result = d === "easy"
+        ? findSolvableState({ draw: drawMode() })
+        : findSolvableState({ draw: drawMode(), totalBudgetMs: 800, perAttemptMs: 300 });
+      setState(result.state);
+    }
     setDealing(false);
     overlayHide();
   }
@@ -233,11 +246,33 @@ function App() {
   function openOptions() {
     let drawSel = drawMode();
     let autoSel = autoComplete();
+    let diffSel: Difficulty = difficulty();
     modalShow({
       title: "Options",
       body: (
         <div style="display:flex; flex-direction:column; gap:10px;">
           <div style="display:flex; flex-direction:column; gap:6px;">
+            <span>Difficulty:</span>
+            <label>
+              <input type="radio" name="diff" value="easy"
+                     checked={diffSel === "easy"}
+                     onChange={() => { diffSel = "easy"; }} />
+              Easy — guaranteed-winnable deal
+            </label>
+            <label>
+              <input type="radio" name="diff" value="medium"
+                     checked={diffSel === "medium"}
+                     onChange={() => { diffSel = "medium"; }} />
+              Medium — usually winnable
+            </label>
+            <label>
+              <input type="radio" name="diff" value="hard"
+                     checked={diffSel === "hard"}
+                     onChange={() => { diffSel = "hard"; }} />
+              Hard — random deal (may be unsolvable)
+            </label>
+          </div>
+          <div style="padding-top:10px; border-top:1px solid #c5c5c5; display:flex; flex-direction:column; gap:6px;">
             <label>
               <input type="radio" name="draw" value="1"
                      checked={drawSel === 1}
@@ -267,10 +302,16 @@ function App() {
           onClick: () => {
             modalClose();
             if (autoSel !== autoComplete()) setAutoCompleteOpt(autoSel, true);
+            const needsRedeal = diffSel !== difficulty() || drawSel !== drawMode();
+            if (diffSel !== difficulty()) {
+              setDifficulty(diffSel);
+            }
             if (drawSel !== drawMode()) {
               setDrawMode(drawSel);
-              persistOptions();
               menuInvoke("sync_draw_mode", { mode: drawSel });
+            }
+            if (needsRedeal) {
+              persistOptions();
               newGame();
             }
           },

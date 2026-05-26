@@ -22,6 +22,7 @@ import { applyInitial as applyInitialZoom, install as installZoom } from "../sha
 import * as Options from "../shared/options";
 import * as Stats from "../shared/stats";
 import { WebMenuBar, standardMenus } from "../shared/WebMenuBar";
+import { coerce as coerceDifficulty, type Difficulty } from "../shared/difficulty";
 import * as H from "./game";
 import * as AI from "./ai";
 
@@ -31,11 +32,12 @@ const DIR_LABELS: Record<H.PassDir, string> = {
   L: "left", R: "right", A: "across", N: "no pass",
 };
 
-interface AppOpts { zoom: number; targetScore: number }
-const OPTION_DEFAULTS: AppOpts = { zoom: 1, targetScore: 100 };
+interface AppOpts { zoom: number; targetScore: number; difficulty: Difficulty }
+const OPTION_DEFAULTS: AppOpts = { zoom: 1, targetScore: 100, difficulty: "medium" };
 
 function App() {
   const opts = Options.load<AppOpts>(GAME_ID, OPTION_DEFAULTS);
+  opts.difficulty = coerceDifficulty(opts.difficulty, "medium");
   applyInitialZoom(opts.zoom);
   const [state, setState] = createStore<H.HeartsState>(
     H.newState({ targetScore: opts.targetScore }),
@@ -71,7 +73,7 @@ function App() {
       const seat = state.currentPlayer;
       if (state.phase !== "play" || seat === 0) return;
       if (H.isTrickPendingClear(state)) return;
-      const card = AI.pickPlay(state, seat);
+      const card = AI.pickPlay(state, seat, opts.difficulty);
       setState(produce((s) => { H.playCard(s, seat, card); }));
       afterPlay();
     }, delay) as unknown as number;
@@ -121,7 +123,7 @@ function App() {
     setState(produce((s) => {
       // Fill AI selections.
       for (let seat = 1; seat < 4; seat++) {
-        const picks = AI.pickPass(s.hands[seat]);
+        const picks = AI.pickPass(s.hands[seat], opts.difficulty);
         H.setPending(s, seat, picks);
       }
       H.commitPass(s);
@@ -279,11 +281,33 @@ function App() {
 
   function openOptions() {
     let target = opts.targetScore;
+    let diffSel: Difficulty = opts.difficulty;
     modalShow({
       title: "Options",
       body: (
         <div style="display:flex; flex-direction:column; gap:10px;">
           <div style="display:flex; flex-direction:column; gap:6px;">
+            <span>Difficulty (AI strength):</span>
+            <label>
+              <input type="radio" name="diff" value="easy"
+                     checked={diffSel === "easy"}
+                     onChange={() => { diffSel = "easy"; }} />
+              Easy — opponents play passively
+            </label>
+            <label>
+              <input type="radio" name="diff" value="medium"
+                     checked={diffSel === "medium"}
+                     onChange={() => { diffSel = "medium"; }} />
+              Medium — balanced heuristic
+            </label>
+            <label>
+              <input type="radio" name="diff" value="hard"
+                     checked={diffSel === "hard"}
+                     onChange={() => { diffSel = "hard"; }} />
+              Hard — opponents pass and play aggressively
+            </label>
+          </div>
+          <div style="padding-top:10px; border-top:1px solid #c5c5c5; display:flex; flex-direction:column; gap:6px;">
             <span>Game ends when any player reaches:</span>
             <label>
               <input type="radio" name="target" value="50"
@@ -311,8 +335,11 @@ function App() {
           label: "OK", primary: true,
           onClick: () => {
             modalClose();
-            if (target !== opts.targetScore) {
-              opts.targetScore = target;
+            const needsRestart =
+              target !== opts.targetScore || diffSel !== opts.difficulty;
+            opts.targetScore = target;
+            opts.difficulty = diffSel;
+            if (needsRestart) {
               persistOptions();
               newGame();
             }

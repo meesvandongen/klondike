@@ -15,6 +15,7 @@
  */
 import type { Card, Suit } from "../shared/types";
 import { rankValue } from "../shared/deck";
+import type { Difficulty } from "../shared/difficulty";
 import {
   type HeartsState,
   legalPlays,
@@ -34,15 +35,28 @@ function bySuit(hand: Card[]): Record<Suit, Card[]> {
   return out;
 }
 
-/** Pick 3 cards to pass. Pure function — doesn't mutate state. */
-export function pickPass(hand: Card[]): Card[] {
+/** Pick 3 cards to pass. Pure function — doesn't mutate state.
+ *
+ * Difficulty:
+ *   - easy:   passes its lowest cards (clears the way for opponents to win)
+ *   - medium: balanced heuristic (default)
+ *   - hard:   aggressive — drops the Q♠ even with cover and dumps high
+ *             hearts plus high cards in shortest suits to void
+ */
+export function pickPass(hand: Card[], difficulty: Difficulty = "medium"): Card[] {
+  if (difficulty === "easy") {
+    return [...hand]
+      .sort((a, b) => rankValue(a.rank) - rankValue(b.rank))
+      .slice(0, 3);
+  }
+
   const by = bySuit(hand);
   const picks: Card[] = [];
 
-  // 1. Q♠ if held without enough cover (need ≥3 low spades to keep it).
+  // 1. Q♠ if held. Hard always passes it; medium needs <3 covers.
   if (by.S.some(QS)) {
     const lowSpades = by.S.filter((c) => rankValue(c.rank) < rankValue("Q")).length;
-    if (lowSpades < 3) {
+    if (difficulty === "hard" || lowSpades < 3) {
       picks.push(by.S.find(QS)!);
     }
   }
@@ -53,21 +67,35 @@ export function pickPass(hand: Card[]): Card[] {
     if ((AS(c) || KS(c)) && !picks.includes(c)) picks.push(c);
   }
 
-  // 3. High hearts (A, K, Q).
+  // 3. High hearts. Hard pushes anything Q+; medium keeps Q sometimes.
+  const heartCut = difficulty === "hard" ? rankValue("J") : rankValue("Q");
   for (const c of [...by.H].reverse()) {
     if (picks.length >= 3) break;
-    if (rankValue(c.rank) >= rankValue("Q")) picks.push(c);
+    if (rankValue(c.rank) >= heartCut) picks.push(c);
   }
 
-  // 4. High cards in any other suit (A, K).
-  for (const s of ["D", "C"] as Suit[]) {
-    for (const c of [...by[s]].reverse()) {
-      if (picks.length >= 3) break;
-      if (rankValue(c.rank) >= rankValue("K")) picks.push(c);
+  // 4. Try to void a short side suit (hard only).
+  if (difficulty === "hard" && picks.length < 3) {
+    const sides: Suit[] = ["D", "C"];
+    sides.sort((a, b) => by[a].length - by[b].length);
+    for (const s of sides) {
+      const cards = [...by[s]].reverse();
+      for (const c of cards) {
+        if (picks.length >= 3) break;
+        if (!picks.includes(c)) picks.push(c);
+      }
     }
   }
 
-  // 5. Pad with highest remaining non-Q♠ cards.
+  // 5. High cards in any other suit (A, K).
+  for (const s of ["D", "C"] as Suit[]) {
+    for (const c of [...by[s]].reverse()) {
+      if (picks.length >= 3) break;
+      if (rankValue(c.rank) >= rankValue("K") && !picks.includes(c)) picks.push(c);
+    }
+  }
+
+  // 6. Pad with highest remaining cards.
   if (picks.length < 3) {
     const rest = hand.filter((c) => !picks.includes(c));
     rest.sort((a, b) => rankValue(b.rank) - rankValue(a.rank));
@@ -80,10 +108,26 @@ export function pickPass(hand: Card[]): Card[] {
   return picks.slice(0, 3);
 }
 
-/** Choose one card to play for `seat`. */
-export function pickPlay(state: HeartsState, seat: number): Card {
+/** Choose one card to play for `seat`.
+ *
+ * Difficulty:
+ *   - easy:   always plays the first legal card (often the lowest of suit),
+ *             leaving lots of opportunities open
+ *   - medium: balanced heuristic (default)
+ *   - hard:   like medium, but additionally drops the Q♠ on any heart-led
+ *             trick when discarding, leads even more aggressively from
+ *             shortest suit, and is more eager to dump high hearts
+ */
+export function pickPlay(state: HeartsState, seat: number, difficulty: Difficulty = "medium"): Card {
   const legal = legalPlays(state, seat);
   if (legal.length === 1) return legal[0];
+
+  if (difficulty === "easy") {
+    // Play the lowest legal card with no further heuristics.
+    return legal.reduce((best, c) =>
+      rankValue(c.rank) < rankValue(best.rank) ? c : best,
+    );
+  }
 
   const trick = state.trick;
   const isLead = trick.suit === null;
@@ -157,7 +201,8 @@ export function pickPlay(state: HeartsState, seat: number): Card {
       rankValue(c.rank) > rankValue(best.rank) ? c : best,
     );
   }
-  // No points to dump — just dump the highest legal card.
+  // No points to dump. Hard plays highest aggressively (sets up later voids);
+  // medium dumps highest legal card too — same effect.
   return legal.reduce((best, c) =>
     rankValue(c.rank) > rankValue(best.rank) ? c : best,
   );

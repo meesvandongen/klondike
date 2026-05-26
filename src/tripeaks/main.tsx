@@ -15,20 +15,31 @@ import { applyInitial as applyInitialZoom, install as installZoom } from "../sha
 import * as Options from "../shared/options";
 import * as Stats from "../shared/stats";
 import { WebMenuBar, standardMenus } from "../shared/WebMenuBar";
+import { coerce as coerceDifficulty, type Difficulty } from "../shared/difficulty";
 import * as T from "./game";
 
 const GAME_ID = "tripeaks";
-interface AppOpts { zoom: number }
-const OPTION_DEFAULTS: AppOpts = { zoom: 1 };
+interface AppOpts { zoom: number; difficulty: Difficulty }
+const OPTION_DEFAULTS: AppOpts = { zoom: 1, difficulty: "easy" };
+
+function rulesForDifficulty(d: Difficulty): { wrap: boolean; allFaceUp: boolean } {
+  if (d === "easy") return { wrap: true, allFaceUp: true };
+  if (d === "medium") return { wrap: true, allFaceUp: false };
+  return { wrap: false, allFaceUp: false };
+}
 
 function App() {
   const opts = Options.load<AppOpts>(GAME_ID, OPTION_DEFAULTS);
+  opts.difficulty = coerceDifficulty(opts.difficulty, "easy");
   applyInitialZoom(opts.zoom);
-  const [state, setState] = createStore<T.TriPeaksState>(T.newState());
+  const [difficulty, setDifficulty] = createSignal<Difficulty>(opts.difficulty);
+  const [state, setState] = createStore<T.TriPeaksState>(
+    T.newState(rulesForDifficulty(difficulty())),
+  );
   const now = useNow();
 
   function persistOptions() {
-    Options.save<AppOpts>(GAME_ID, { zoom: opts.zoom });
+    Options.save<AppOpts>(GAME_ID, { zoom: opts.zoom, difficulty: difficulty() });
   }
 
   /* ---- Actions ---- */
@@ -58,7 +69,7 @@ function App() {
     const wasteTop = state.waste[state.waste.length - 1];
     if (!wasteTop) return true;
     for (let i = 0; i < state.tableau.length; i++) {
-      if (T.isAvailable(state, i) && T.canRemove(state.tableau[i], wasteTop)) return false;
+      if (T.isAvailable(state, i) && T.canRemove(state.tableau[i], wasteTop, state.wrap)) return false;
     }
     return true;
   }
@@ -136,7 +147,7 @@ function App() {
     if (state.moves > 0 && !state.finishedAt) {
       Stats.record(GAME_ID, { won: false, score: state.score });
     }
-    setState(T.newState());
+    setState(T.newState(rulesForDifficulty(difficulty())));
   }
 
   /* ---- Click interaction ---- */
@@ -188,10 +199,48 @@ function App() {
   }
 
   function openOptions() {
+    let diffSel: Difficulty = difficulty();
     modalShow({
       title: "Options",
-      body: <p style="margin:0;">TriPeaks has no configurable options at this time.</p>,
-      buttons: [{ label: "OK", primary: true, onClick: modalClose }],
+      body: (
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <span>Difficulty:</span>
+            <label>
+              <input type="radio" name="diff" value="easy"
+                     checked={diffSel === "easy"}
+                     onChange={() => { diffSel = "easy"; }} />
+              Easy — A↔K wrap, all peak cards visible
+            </label>
+            <label>
+              <input type="radio" name="diff" value="medium"
+                     checked={diffSel === "medium"}
+                     onChange={() => { diffSel = "medium"; }} />
+              Medium — A↔K wrap, peaks hidden until exposed
+            </label>
+            <label>
+              <input type="radio" name="diff" value="hard"
+                     checked={diffSel === "hard"}
+                     onChange={() => { diffSel = "hard"; }} />
+              Hard — no A↔K wrap
+            </label>
+          </div>
+        </div>
+      ),
+      buttons: [
+        {
+          label: "OK", primary: true,
+          onClick: () => {
+            modalClose();
+            if (diffSel !== difficulty()) {
+              setDifficulty(diffSel);
+              persistOptions();
+              newGame();
+            }
+          },
+        },
+        { label: "Cancel", onClick: modalClose },
+      ],
     });
   }
 
@@ -294,9 +343,9 @@ function App() {
       if (card.removed) continue;
       const lay = T.LAYOUT[i];
       const avail = T.isAvailable(state, i);
-      const faceUp = avail || lay.row === 3;
+      const faceUp = state.allFaceUp || avail || lay.row === 3;
       const showCard = { id: card.id, rank: card.rank, suit: card.suit, faceUp };
-      const removable = avail && !!wasteCard && T.canRemove(showCard, wasteCard);
+      const removable = avail && !!wasteCard && T.canRemove(showCard, wasteCard, state.wrap);
       out.push({
         key: card.id,
         card: showCard,

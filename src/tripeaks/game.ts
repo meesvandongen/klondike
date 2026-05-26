@@ -24,6 +24,10 @@ export interface TriPeaksState {
   startedAt: number;
   finishedAt: number | null;
   history: Snapshot[];
+  /** When true, A and K wrap (cyclic ranks). When false, A↔K is not allowed. */
+  wrap: boolean;
+  /** When true, all peak cards begin face-up (Easy mode reveal). */
+  allFaceUp: boolean;
 }
 
 interface Snapshot {
@@ -82,7 +86,9 @@ export const LAYOUT: LayoutEntry[] = [
   { row: 3, x: 18, covers: [] },         // 27
 ];
 
-export function newState(): TriPeaksState {
+export function newState(opts: { wrap?: boolean; allFaceUp?: boolean } = {}): TriPeaksState {
+  const wrap = opts.wrap ?? true;
+  const allFaceUp = opts.allFaceUp ?? false;
   const deck = shuffle(baseMakeDeck()).map((c) => ({ ...c, faceUp: false }));
   const tableau: TriPeaksCard[] = [];
   for (let i = 0; i < 28; i++) {
@@ -98,6 +104,8 @@ export function newState(): TriPeaksState {
     startedAt: Date.now(),
     finishedAt: null,
     history: [],
+    wrap,
+    allFaceUp,
   };
 }
 
@@ -115,9 +123,20 @@ export function cyclicRankDiff(a: Rank, b: Rank): number {
   return Math.min(d, 13 - d);
 }
 
-export function canRemove(card: Card, wasteTop: Card | null | undefined): boolean {
+export function linearRankDiff(a: Rank, b: Rank): number {
+  return Math.abs(rankValue(a) - rankValue(b));
+}
+
+export function canRemove(
+  card: Card,
+  wasteTop: Card | null | undefined,
+  wrap: boolean = true,
+): boolean {
   if (!wasteTop) return false;
-  return cyclicRankDiff(card.rank, wasteTop.rank) === 1;
+  const diff = wrap
+    ? cyclicRankDiff(card.rank, wasteTop.rank)
+    : linearRankDiff(card.rank, wasteTop.rank);
+  return diff === 1;
 }
 
 function snapshot(state: TriPeaksState): Snapshot {
@@ -156,7 +175,7 @@ export function removeTableau(state: TriPeaksState, i: number): boolean {
   const card = state.tableau[i];
   if (!isAvailable(state, i)) return false;
   const wasteTop = state.waste[state.waste.length - 1];
-  if (!canRemove(card, wasteTop)) return false;
+  if (!canRemove(card, wasteTop, state.wrap)) return false;
   pushHistory(state);
   card.removed = true;
   state.waste.push({ ...card, faceUp: true });
@@ -186,7 +205,7 @@ export function hint(state: TriPeaksState): HintResult | null {
   const wasteTop = state.waste[state.waste.length - 1];
   if (!wasteTop) return null;
   for (let i = 0; i < state.tableau.length; i++) {
-    if (isAvailable(state, i) && canRemove(state.tableau[i], wasteTop)) {
+    if (isAvailable(state, i) && canRemove(state.tableau[i], wasteTop, state.wrap)) {
       return { tableauIndex: i };
     }
   }

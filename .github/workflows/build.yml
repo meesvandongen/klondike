@@ -40,18 +40,23 @@ jobs:
           workspaces: ./src-tauri
           shared-key: ${{ matrix.platform }}
 
+      # pnpm comes from the packageManager field in package.json.
+      - name: Enable corepack
+        run: corepack enable
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
+          cache: pnpm
 
-      - name: Install npm dependencies
-        run: npm install
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
       - name: Build ${{ matrix.game }}
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
-        run: npx tauri build --config src-tauri/tauri.${{ matrix.game }}.conf.json ${{ matrix.target_args }}
+        run: pnpm exec tauri build --config src-tauri/tauri.${{ matrix.game }}.conf.json ${{ matrix.target_args }}
 
       - name: Zip macOS app bundle
         if: matrix.platform == 'macos-latest'
@@ -95,13 +100,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # pnpm comes from the packageManager field in package.json.
+      - run: corepack enable
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
+          cache: pnpm
 
-      - run: npm install
+      - run: pnpm install --frozen-lockfile
 
-      - run: npm run build
+      - run: pnpm run lint
+
+      - run: pnpm run build
 
       - uses: actions/upload-artifact@v4
         with:

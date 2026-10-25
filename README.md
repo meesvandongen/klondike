@@ -43,7 +43,7 @@ The native menu (Game / Edit / View / Help) is defined once in `src-tauri/src/li
 
 ## Prerequisites
 
-- Node.js 20+
+- Node.js 22.18+ (pnpm via `corepack enable`)
 - Rust toolchain (stable)
 - Tauri platform prerequisites — see <https://tauri.app/start/prerequisites/>
 
@@ -52,20 +52,20 @@ The native menu (Game / Edit / View / Help) is defined once in `src-tauri/src/li
 Desktop (Tauri shell):
 
 ```bash
-npm install
+pnpm install
 
-npm run tauri:dev               # default = Klondike
-npm run tauri:dev:freecell
-npm run tauri:dev:spider
-npm run tauri:dev:tripeaks
-npm run tauri:dev:pyramid
-npm run tauri:dev:hearts
+pnpm run tauri:dev              # default = Klondike
+pnpm run tauri:dev:freecell
+pnpm run tauri:dev:spider
+pnpm run tauri:dev:tripeaks
+pnpm run tauri:dev:pyramid
+pnpm run tauri:dev:hearts
 ```
 
 Browser only (Vite dev server, opens at `localhost:1420`):
 
 ```bash
-npm run dev
+pnpm run dev
 # then open /klondike/, /freecell/, /spider/, /tripeaks/,
 #                /pyramid/, /hearts/ or just / for the landing page.
 ```
@@ -73,12 +73,12 @@ npm run dev
 ## Building executables
 
 ```bash
-npm run tauri:build               # Klondike
-npm run tauri:build:freecell
-npm run tauri:build:spider
-npm run tauri:build:tripeaks
-npm run tauri:build:pyramid
-npm run tauri:build:hearts
+pnpm run tauri:build              # Klondike
+pnpm run tauri:build:freecell
+pnpm run tauri:build:spider
+pnpm run tauri:build:tripeaks
+pnpm run tauri:build:pyramid
+pnpm run tauri:build:hearts
 ```
 
 Each command writes to `src-tauri/target/release/bundle/`:
@@ -90,7 +90,7 @@ Each command writes to `src-tauri/target/release/bundle/`:
 ## Building the web bundle
 
 ```bash
-npm run build
+pnpm run build
 ```
 
 Writes a static site to `dist/` — open `dist/index.html` for the
@@ -106,16 +106,16 @@ landing page, or any `dist/<game>/index.html` directly.
 For a one-off deploy from your machine:
 
 ```bash
-npm install
-npm run build
-npx wrangler deploy        # or: npm run cf:deploy
+pnpm install
+pnpm run build
+pnpm exec wrangler deploy        # or: pnpm run cf:deploy
 ```
 
 For continuous deployment via Cloudflare's git integration
 (*Workers & Pages → Create → Workers → Connect to git*), set:
 
-- **Build command:** `npm run build`
-- **Deploy command:** `npx wrangler deploy`
+- **Build command:** `pnpm run build`
+- **Deploy command:** `pnpm exec wrangler deploy`
 - **Root directory:** *(leave blank — project is at repo root)*
 
 The build pipeline picks up `wrangler.toml` automatically; the
@@ -141,7 +141,7 @@ python3 scripts/make_icons.py
 1. **Build** — a **(platform × variant)** matrix produces a `.dmg`
    for macOS (universal) and an `.exe` for Windows for each of the
    six games (12 parallel jobs). Artifacts are uploaded individually.
-2. **Web bundle** — a single job runs `npm run build` and uploads the
+2. **Web bundle** — a single job runs `pnpm run build` and uploads the
    `dist/` tree as the `solitaire-web` artifact; on `main` it also
    publishes to GitHub Pages.
 3. **Release** — on a `v*` tag push, every desktop artifact is

@@ -47,7 +47,7 @@ jobs:
         run: npm install -g --force corepack@latest && corepack enable
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: pnpm
@@ -106,7 +106,7 @@ jobs:
       # newer corepack than the one bundled with Node. --force overwrites the yarn
       # shim that Windows runners preinstall.
       - run: npm install -g --force corepack@latest && corepack enable
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: pnpm

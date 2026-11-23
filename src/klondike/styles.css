@@ -21,7 +21,7 @@
   display: grid;
   grid-template-columns: repeat(7, var(--card-w));
   /* Explicit 1fr row so `.pile-slot.tall { height: 100% }` resolves to
-   * the full available vertical space. WebKit (Safari, Tauri's WKWebView)
+   * the full available vertical space. WebKit (Safari, the desktop app's WKWebView)
    * leaves implicit auto rows undefined, collapsing percentage heights
    * to 0; Chromium tolerated it but macOS does not. */
   grid-template-rows: minmax(0, 1fr);

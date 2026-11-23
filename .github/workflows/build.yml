@@ -15,30 +15,33 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [macos-latest, windows-latest]
+        platform: [macos-latest, windows-latest, ubuntu-latest]
         game: [klondike, freecell, spider, tripeaks, pyramid, hearts]
         include:
+          # MyGo needs no cgo, so each runner could build every platform;
+          # macOS app bundles are still best signed on a Mac, and Windows
+          # installers built where NSIS runs natively.
           - platform: macos-latest
-            target_args: "--target universal-apple-darwin --bundles app"
-            artifact_glob: "src-tauri/target/universal-apple-darwin/release/bundle/macos/*.zip"
+            target_args: "-platform darwin/universal -skip-dmg"
+            artifact_glob: "build/darwin-universal/*.zip"
           - platform: windows-latest
-            target_args: ""
-            artifact_glob: "src-tauri/target/release/bundle/nsis/*.exe"
+            target_args: "-platform windows/amd64"
+            artifact_glob: "build/windows-amd64/*-setup-*.exe"
+          - platform: ubuntu-latest
+            target_args: "-platform linux/amd64"
+            artifact_glob: |
+              build/linux-amd64/*.deb
+              build/linux-amd64/*.rpm
+              build/linux-amd64/*.tar.gz
 
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+      - name: Setup Go
+        uses: actions/setup-go@v6
         with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
-
-      - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: ./src-tauri
-          shared-key: ${{ matrix.platform }}
+          go-version-file: go.mod
 
       # pnpm comes from the packageManager field in package.json. pnpm 12 needs a
       # newer corepack than the one bundled with Node. --force overwrites the yarn
@@ -56,14 +59,12 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build ${{ matrix.game }}
-        env:
-          CSC_IDENTITY_AUTO_DISCOVERY: false
-        run: pnpm exec tauri build --config src-tauri/tauri.${{ matrix.game }}.conf.json ${{ matrix.target_args }}
+        run: pnpm exec node scripts/app.mjs build ${{ matrix.game }} ${{ matrix.target_args }}
 
       - name: Zip macOS app bundle
         if: matrix.platform == 'macos-latest'
         run: |
-          cd src-tauri/target/universal-apple-darwin/release/bundle/macos
+          cd build/darwin-universal
           for app in *.app; do
             ditto -c -k --keepParent "$app" "${app%.app}.zip"
           done
@@ -94,6 +95,9 @@ jobs:
           files: |
             dist/**/*.zip
             dist/**/*.exe
+            dist/**/*.deb
+            dist/**/*.rpm
+            dist/**/*.tar.gz
           generate_release_notes: true
 
   web:
@@ -114,6 +118,16 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - run: pnpm run lint
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+
+      - run: go vet ./... && go test ./...
+
+      # The generated client (src/shared/mygo.ts) is committed so the web
+      # build needs no Go; fail if it is out of date with main.go.
+      - run: pnpm run app:generate && git diff --exit-code src/shared/mygo.ts
 
       - run: pnpm run build
 

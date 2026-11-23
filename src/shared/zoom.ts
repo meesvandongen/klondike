@@ -37,7 +37,7 @@ function apply(level: number): number {
 
 /**
  * Apply zoom-derived CSS variables to <html> synchronously, before any
- * Solid render. On Safari/WebKit (incl. Tauri's WKWebView on macOS) the
+ * Solid render. On Safari/WebKit (incl. the desktop app's WKWebView on macOS) the
  * module script can run before the linked stylesheet has finished
  * parsing, so a render-time `getComputedStyle().getPropertyValue("--…")`
  * returns "" and reactive memos resolve fan offsets to 0 — making all

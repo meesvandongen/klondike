@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Generate Vista-style solitaire icons for all variants.
 
-Each game gets a 1024×1024 master PNG (downsampled for the various
-icon sizes) plus 32×32, 128×128, 256×256, an .ico bundle and an
-.icns bundle. The icons mirror the visual idiom of the Windows
+Each game gets a 1024×1024 PNG, `icons/<game>/icon.png`, which
+`mygo build` turns into the .icns, .ico and Linux icons of the app
+(mygo.config.ts points `icon` at it). The icons mirror the visual idiom of the Windows
 Vista / Windows 7 solitaire collection: a saturated felt
 background, glossy playing cards arranged in a game-specific
 motif, with a soft inner highlight at the top so the icon reads as
@@ -11,18 +11,16 @@ a button-like surface at small sizes.
 """
 import math
 import os
-import shutil
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
-import icnsutil
 
 ROOT = Path(__file__).resolve().parents[1]
-ICON_BASE = ROOT / "src-tauri" / "icons"
+ICON_BASE = ROOT / "icons"
 
 # Render at supersampled resolution then downsample for crispness.
 SUPER = 2
-MASTER_OUT = 512  # final master size
+MASTER_OUT = 1024  # final size; MyGo asks for a 1024×1024 PNG
 
 RED = (197, 32, 38, 255)
 BLACK = (28, 28, 28, 255)
@@ -533,40 +531,13 @@ def write_set(name: str, master_super: Image.Image) -> None:
     master = master_super.resize(
         (MASTER_OUT, MASTER_OUT), Image.LANCZOS,
     )
-    master.save(out / "icon.png")
-    master.resize((32, 32), Image.LANCZOS).save(out / "32x32.png")
-    master.resize((128, 128), Image.LANCZOS).save(out / "128x128.png")
-    master.resize((256, 256), Image.LANCZOS).save(out / "128x128@2x.png")
-
-    ico_sizes = [(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (256, 256)]
-    master.save(out / "icon.ico", format="ICO", sizes=ico_sizes)
-
-    builder = icnsutil.IcnsFile()
-    sizes = {
-        "ic07": 128,
-        "ic08": 256,
-        "ic09": 512,
-        "ic10": 1024,
-        "ic12": 64,
-        "ic13": 256,
-        "ic14": 512,
-    }
-    tmp_dir = out / "_icns_tmp"
-    tmp_dir.mkdir(exist_ok=True)
-    try:
-        for key, sz in sizes.items():
-            tmp = tmp_dir / f"{key}.png"
-            master_super.resize((sz, sz), Image.LANCZOS).save(tmp)
-            builder.add_media(key, file=str(tmp))
-        builder.write(str(out / "icon.icns"))
-    finally:
-        shutil.rmtree(tmp_dir, ignore_errors=True)
+    master.save(out / "icon.png", optimize=True)
 
 
 def main() -> None:
     base_size = MASTER_OUT * SUPER
     for name, fn in GAMES.items():
-        print(f"Generating {name} icon set...")
+        print(f"Generating {name} icon...")
         write_set(name, fn(base_size))
     print("Done.")
 

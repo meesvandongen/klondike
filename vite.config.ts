@@ -8,7 +8,7 @@ export default defineConfig({
   // The code is not formatter-managed; these options mirror the existing style.
   fmt: { semi: true, singleQuote: false, printWidth: 100 },
   lint: {
-    ignorePatterns: ["dist/**", "src-tauri/**"],
+    ignorePatterns: ["dist/**", "build/**", ".mygo/**"],
     jsPlugins: [{ name: "vite-plus", specifier: "vite-plus/oxlint-plugin" }],
     rules: { "vite-plus/prefer-vite-plus-imports": "error" },
     options: { typeAware: true, typeCheck: true },

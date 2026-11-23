@@ -12,7 +12,7 @@ import { DragLayer } from "../shared/DragLayer";
 import { createDragManager, skipIds } from "../shared/drag";
 import { useNow } from "../shared/timer";
 import { formatTime, cssVarPx } from "../shared/utils";
-import { invoke as menuInvoke, registerMany, wire as wireMenu } from "../shared/menu";
+import { registerMany, syncAutoComplete, wire as wireMenu } from "../shared/menu";
 import { bind as bindHotkeys } from "../shared/hotkeys";
 import { applyInitial as applyInitialZoom, install as installZoom } from "../shared/zoom";
 import * as Options from "../shared/options";
@@ -124,7 +124,7 @@ function App() {
   function setAutoCompleteOpt(enabled: boolean, syncMenu: boolean) {
     setAutoComplete(enabled);
     persistOptions();
-    if (syncMenu) menuInvoke("sync_auto_complete", { enabled });
+    if (syncMenu) syncAutoComplete(enabled);
     if (enabled) runAutoPlay();
   }
 
@@ -336,7 +336,7 @@ function App() {
     });
 
     wireMenu();
-    menuInvoke("sync_auto_complete", { enabled: autoComplete() });
+    syncAutoComplete(autoComplete());
 
     bindHotkeys({
       "F2": "new-game",

@@ -1,16 +1,16 @@
 /* ---------- Web menu bar ----------
  *
  * Rendered only when the page is running in a browser (i.e. not
- * embedded in Tauri). It mirrors the native menu defined in
- * `src-tauri/src/lib.rs` so the web build doesn't lose access to
+ * embedded in the MyGo desktop app). It mirrors the native menu defined
+ * in `main.go` so the web build doesn't lose access to
  * New Game, Undo, Hint, Options, etc.
  *
  * Items are dispatched through the same `fire(action)` channel
- * used by the Tauri menu listener, so individual games don't need
+ * used by the native menu listener, so individual games don't need
  * any new wiring beyond what they already register.
  */
 import { createSignal, For, Show, onCleanup, onMount } from "solid-js";
-import { fire } from "./menu";
+import { fire, isDesktop } from "./menu";
 
 export interface MenuItem {
   /** Visible label. */
@@ -36,7 +36,7 @@ function isSeparator(it: MenuItem | { separator: true }): it is { separator: tru
 
 export function isWeb(): boolean {
   if (typeof window === "undefined") return false;
-  return !window.__TAURI__;
+  return !isDesktop();
 }
 
 export interface StandardMenuOpts {
@@ -53,7 +53,7 @@ export interface StandardMenuOpts {
   hasHint?: boolean;
 }
 
-/** Default suite of menus matching the native Tauri menu. */
+/** Default suite of menus matching the native desktop menu. */
 export function standardMenus(opts: StandardMenuOpts): MenuColumn[] {
   const edit: (MenuItem | { separator: true })[] = [
     { label: "Undo", action: "undo", shortcut: "Ctrl+Z" },
@@ -115,7 +115,7 @@ export function WebMenuBar(props: { menus: () => MenuColumn[]; appName: string }
     setOpen(null);
   }
   // Only attach web-only behavior when actually running in a browser.
-  // Inside Tauri the native menu replaces the web menu, and applying the
+  // Inside the desktop app the native menu replaces the web menu, and applying the
   // `data-web-menu` attribute would push the board down by 28px under
   // an invisible menu bar.
   const web = isWeb();

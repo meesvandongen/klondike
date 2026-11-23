@@ -299,7 +299,7 @@ html, body {
 /* ---------- Web menu bar ----------
  *
  * Rendered by <WebMenuBar/> only when running in a browser (i.e.
- * outside Tauri). When present, html[data-web-menu="1"] is set and
+ * outside the desktop app). When present, html[data-web-menu="1"] is set and
  * the board is shifted down to make room.
  */
 

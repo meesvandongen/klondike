@@ -6,9 +6,9 @@ npm-debug.log*
 .vscode/
 .idea/
 
-# Tauri / Rust
-src-tauri/target/
-src-tauri/gen/
+# MyGo: packaged apps and the development app
+build/
+.mygo/
 
 # Cloudflare Wrangler
 .wrangler/
